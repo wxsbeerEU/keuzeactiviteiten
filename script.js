@@ -20,7 +20,7 @@ let appData = {
   deelkampen: [],
   deelnemers: [],
   masterActiviteiten: [],
-  periodeAanbod: {}, // Structuur: { kampId: { voormiddag: [ { actId: "...", max: 10 } ] } }
+  periodeAanbod: {},
   keuzes: {},
   adminHash: STANDAARD_HASH
 };
@@ -35,6 +35,11 @@ async function hashWachtwoord(wachtwoord) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Sorteerfuncties
+function sorteerOpNaam(array) {
+  return array.sort((a, b) => a.naam.localeCompare(b.naam, 'nl', { sensitivity: 'base' }));
+}
+
 async function laadFirebaseData() {
   const dbRef = ref(db);
   try {
@@ -47,6 +52,11 @@ async function laadFirebaseData() {
       if (!appData.periodeAanbod) appData.periodeAanbod = {};
       if (!appData.keuzes) appData.keuzes = {};
       if (!appData.adminHash) appData.adminHash = STANDAARD_HASH;
+
+      // Alfabetisch sorteren bij het inladen
+      appData.deelkampen = sorteerOpNaam(appData.deelkampen);
+      appData.deelnemers = sorteerOpNaam(appData.deelnemers);
+      appData.masterActiviteiten = sorteerOpNaam(appData.masterActiviteiten);
     } else {
       await set(ref(db, 'topvakantie'), appData);
     }
@@ -58,63 +68,83 @@ async function laadFirebaseData() {
 }
 
 function initApp() {
+  vulKampCheckboxes();
   vulDropdowns();
   updateOverzicht();
 }
 
+function vulKampCheckboxes() {
+  const grid = document.getElementById('kampCheckboxesGrid');
+  grid.innerHTML = '';
+
+  if (appData.deelkampen.length === 0) {
+    grid.innerHTML = '<em>Nog geen deelkampen aangemaakt. Voeg ze toe via "Beheer & Data".</em>';
+    return;
+  }
+
+  appData.deelkampen.forEach(kamp => {
+    grid.innerHTML += `
+      <label class="checkbox-label">
+        <input type="checkbox" class="kamp-select-cb" value="${kamp.id}" onchange="onKampSelectionChange()">
+        ${kamp.naam}
+      </label>
+    `;
+  });
+}
+
 function vulDropdowns() {
-  const kampSelect = document.getElementById('kampSelect');
   const overzichtSelect = document.getElementById('overzichtKampSelect');
   const nieuwDeelnemerKamp = document.getElementById('nieuwDeelnemerKamp');
   const beheerKampSelect = document.getElementById('beheerKampSelect');
 
-  kampSelect.innerHTML = '<option value="">-- Selecteer een Deelkamp --</option>';
   overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen --</option>';
   nieuwDeelnemerKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
   beheerKampSelect.innerHTML = '<option value="">-- Kies Kamp --</option>';
 
   appData.deelkampen.forEach(kamp => {
     const opt = `<option value="${kamp.id}">${kamp.naam}</option>`;
-    kampSelect.innerHTML += opt;
     overzichtSelect.innerHTML += opt;
     nieuwDeelnemerKamp.innerHTML += opt;
     beheerKampSelect.innerHTML += opt;
   });
 }
 
-// 1. KAMP SELECTIE & KEUZES
-window.onKampChange = function() {
-  const kampId = document.getElementById('kampSelect').value;
+// 1. MEERDERE KAMPEN SELECTEREN
+window.onKampSelectionChange = function() {
+  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.kamp-select-cb:checked')).map(cb => cb.value);
   const container = document.getElementById('deelnemersContainer');
   const actionsBar = document.getElementById('actionsBar');
   const badge = document.getElementById('kampBadge');
 
   container.innerHTML = '';
 
-  if (!kampId) {
+  if (geselecteerdeKampIds.length === 0) {
     actionsBar.style.display = 'none';
-    badge.textContent = 'Selecteer een kamp';
-    container.innerHTML = '<div class="empty-state">Kies hierboven een deelkamp om te beginnen.</div>';
+    badge.textContent = 'Geen kampen geselecteerd';
+    container.innerHTML = '<div class="empty-state">Vink hierboven één of meerdere deelkampen aan om te beginnen.</div>';
     return;
   }
 
-  const kamp = appData.deelkampen.find(k => k.id === kampId);
-  badge.textContent = kamp ? kamp.naam : 'Selecteer een kamp';
+  const kampNamen = geselecteerdeKampIds.map(id => {
+    const k = appData.deelkampen.find(x => x.id === id);
+    return k ? k.naam : '';
+  }).join(', ');
+
+  badge.textContent = kampNamen;
   actionsBar.style.display = 'flex';
 
-  renderDeelnemersFormulier(kampId);
+  renderDeelnemersFormulierMulti(geselecteerdeKampIds);
 };
 
-// Bereken teller voor aantal inschrijvingen per activiteit/periode
-function berekenAantallen(kampId) {
-  const aantallen = {}; // { "voormiddag_actId": 3 }
-  const deelnemersInKamp = appData.deelnemers.filter(d => d.kampId === kampId);
+function berekenAantallenMulti(geselecteerdeKampIds) {
+  const aantallen = {}; // { "kampId_voormiddag_actId": 3 }
+  const deelnemersInKampen = appData.deelnemers.filter(d => geselecteerdeKampIds.includes(d.kampId));
 
-  deelnemersInKamp.forEach(d => {
+  deelnemersInKampen.forEach(d => {
     ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
       const actId = appData.keuzes[`${d.id}_${p}`];
       if (actId) {
-        const sleutel = `${p}_${actId}`;
+        const sleutel = `${d.kampId}_${p}_${actId}`;
         aantallen[sleutel] = (aantallen[sleutel] || 0) + 1;
       }
     });
@@ -123,14 +153,17 @@ function berekenAantallen(kampId) {
   return aantallen;
 }
 
-function renderDeelnemersFormulier(kampId) {
+function renderDeelnemersFormulierMulti(geselecteerdeKampIds) {
   const container = document.getElementById('deelnemersContainer');
-  const deelnemers = appData.deelnemers.filter(d => d.kampId === kampId);
-  const kampAanbod = appData.periodeAanbod[kampId] || {};
-  const huidigeAantallen = berekenAantallen(kampId);
+  let deelnemers = appData.deelnemers.filter(d => geselecteerdeKampIds.includes(d.kampId));
+  
+  // Alfabetisch op naam sorteren
+  deelnemers = sorteerOpNaam(deelnemers);
+
+  const huidigeAantallen = berekenAantallenMulti(geselecteerdeKampIds);
 
   if (deelnemers.length === 0) {
-    container.innerHTML = '<div class="empty-state">Nog geen deelnemers in dit kamp. Voeg ze toe via "Beheer & Data".</div>';
+    container.innerHTML = '<div class="empty-state">Geen deelnemers gevonden in de geselecteerde kampen. Voeg ze toe via "Beheer & Data".</div>';
     return;
   }
 
@@ -147,38 +180,48 @@ function renderDeelnemersFormulier(kampId) {
     const card = document.createElement('div');
     card.className = 'deelnemer-card';
 
+    const kampObj = appData.deelkampen.find(k => k.id === d.kampId);
+    const kampNaam = kampObj ? kampObj.naam : '';
+
+    const kampAanbod = appData.periodeAanbod[d.kampId] || {};
+
     let gridHtml = '';
     periodes.forEach(p => {
-      const toegestaneItems = kampAanbod[p.id] || []; // Array van { actId, max }
+      const toegestaneItems = kampAanbod[p.id] || [];
       const key = `${d.id}_${p.id}`;
       const geselecteerdActId = appData.keuzes[key] || '';
 
       let options = '<option value="">-- Geen --</option>';
       
-      toegestaneItems.forEach(item => {
-        const act = appData.masterActiviteiten.find(a => a.id === item.actId);
-        if (act) {
-          const teller = huidigeAantallen[`${p.id}_${act.id}`] || 0;
-          const max = parseInt(item.max) || 0;
-          const isVol = max > 0 && teller >= max && geselecteerdActId !== act.id;
-          
-          let capLabel = max > 0 ? ` (${teller}/${max})` : '';
-          if (isVol) capLabel += ' [VOL]';
+      // Activiteiten binnen dropdown alfabetisch sorteren
+      const mogelijkeMasterAct = appData.masterActiviteiten.filter(a => toegestaneItems.some(item => item.actId === a.id));
+      sorteerOpNaam(mogelijkeMasterAct);
 
-          options += `<option value="${act.id}" ${geselecteerdActId === act.id ? 'selected' : ''} ${isVol ? 'disabled' : ''}>${act.naam}${capLabel}</option>`;
-        }
+      mogelijkeMasterAct.forEach(act => {
+        const item = toegestaneItems.find(i => i.actId === act.id);
+        const teller = huidigeAantallen[`${d.kampId}_${p.id}_${act.id}`] || 0;
+        const max = parseInt(item ? item.max : 0) || 0;
+        const isVol = max > 0 && teller >= max && geselecteerdActId !== act.id;
+        
+        let capLabel = max > 0 ? ` (${teller}/${max})` : '';
+        if (isVol) capLabel += ' [VOL]';
+
+        options += `<option value="${act.id}" ${geselecteerdActId === act.id ? 'selected' : ''} ${isVol ? 'disabled' : ''}>${act.naam}${capLabel}</option>`;
       });
 
       gridHtml += `
         <div class="periode-box">
           <div class="periode-title">${p.label}</div>
-          <select data-deelnemer="${d.id}" data-periode="${p.id}" onchange="onKeuzeChange('${kampId}')">${options}</select>
+          <select data-deelnemer="${d.id}" data-periode="${p.id}" onchange="onKeuzeChangeMulti()">${options}</select>
         </div>
       `;
     });
 
     card.innerHTML = `
-      <div class="deelnemer-naam">${d.naam}</div>
+      <div class="deelnemer-header">
+        <span class="deelnemer-naam">${d.naam}</span>
+        <span class="kamp-tag-small">${kampNaam}</span>
+      </div>
       <div class="periodes-grid">${gridHtml}</div>
     `;
 
@@ -186,8 +229,7 @@ function renderDeelnemersFormulier(kampId) {
   });
 }
 
-window.onKeuzeChange = function(kampId) {
-  // Update tijdelijk in lokaal geheugen om capaciteit tellers direct te verversen
+window.onKeuzeChangeMulti = function() {
   const selects = document.querySelectorAll('select[data-deelnemer]');
   selects.forEach(s => {
     const dId = s.dataset.deelnemer;
@@ -195,7 +237,8 @@ window.onKeuzeChange = function(kampId) {
     appData.keuzes[`${dId}_${p}`] = s.value;
   });
 
-  renderDeelnemersFormulier(kampId);
+  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.kamp-select-cb:checked')).map(cb => cb.value);
+  renderDeelnemersFormulierMulti(geselecteerdeKampIds);
 };
 
 window.opslaanKeuzes = async function() {
@@ -283,8 +326,9 @@ window.opslaanBeheerAanbod = async function() {
   await set(ref(db, `topvakantie/periodeAanbod/${kampId}`), appData.periodeAanbod[kampId]);
   showModal("Opgeslagen", "Het activiteitenaanbod en de capaciteit zijn opgeslagen.");
 
-  if (document.getElementById('kampSelect').value === kampId) {
-    renderDeelnemersFormulier(kampId);
+  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.kamp-select-cb:checked')).map(cb => cb.value);
+  if (geselecteerdeKampIds.length > 0) {
+    renderDeelnemersFormulierMulti(geselecteerdeKampIds);
   }
 };
 
@@ -330,12 +374,13 @@ window.voegMasterActiviteitToe = async function() {
 
   const nieuw = { id: `mact-${Date.now()}`, naam: naam };
   appData.masterActiviteiten.push(nieuw);
+  appData.masterActiviteiten = sorteerOpNaam(appData.masterActiviteiten);
 
   await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
   input.value = '';
   renderBeheerLijsten();
   if (document.getElementById('beheerKampSelect').value) renderBeheerAanbodGrid();
-  showModal("Succes", `Activiteit "${naam}" toegevoegd aan Totale Database!`);
+  showModal("Succes", `Activiteit "${naam}" toegevoegd aan Master-Database!`);
 };
 
 window.voegKampToe = async function() {
@@ -345,6 +390,7 @@ window.voegKampToe = async function() {
 
   const nieuwKamp = { id: `k-${Date.now()}`, naam: naam };
   appData.deelkampen.push(nieuwKamp);
+  appData.deelkampen = sorteerOpNaam(appData.deelkampen);
 
   await set(ref(db, 'topvakantie/deelkampen'), appData.deelkampen);
   input.value = '';
@@ -362,6 +408,7 @@ window.voegDeelnemerToe = async function() {
 
   const nieuw = { id: Date.now(), naam: naam, kampId: kampId };
   appData.deelnemers.push(nieuw);
+  appData.deelnemers = sorteerOpNaam(appData.deelnemers);
 
   await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
   input.value = '';
@@ -422,7 +469,11 @@ window.updateOverzicht = function() {
   if (gefilterdeAct && gefilterdeAct.length > 0) {
     gefilterdeAct.forEach(act => {
       const ingeschreven = [];
-      appData.deelnemers.forEach(d => {
+      
+      // Deelnemers gesorteerd verwerken
+      const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
+
+      deelnemersLijst.forEach(d => {
         if (!filterKamp || d.kampId === filterKamp) {
           ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
             if (appData.keuzes[`${d.id}_${p}`] === act.id) {
@@ -452,8 +503,9 @@ window.updateOverzicht = function() {
 
 window.exportCSV = function() {
   let csv = `Deelnemer,Kamp,Voormiddag,Namiddag 1,Namiddag 2,Avond\n`;
+  const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
 
-  appData.deelnemers.forEach(d => {
+  deelnemersLijst.forEach(d => {
     const kamp = appData.deelkampen.find(k => k.id === d.kampId);
     const getActNaam = (p) => {
       const actId = appData.keuzes[`${d.id}_${p}`];
