@@ -1,3 +1,20 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// VUL HIER JOUW FIREBASE CONFIG IN (Van de Firebase Console)
+const firebaseConfig = {
+  apiKey: "JOUW_API_KEY",
+  authDomain: "JOUW_PROJECT.firebaseapp.com",
+  databaseURL: "https://JOUW_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "JOUW_PROJECT",
+  storageBucket: "JOUW_PROJECT.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
 const STANDAARD_DATA = {
   deelkampen: [
     { id: "k-1", naam: "Kerkers & Draken" },
@@ -16,32 +33,260 @@ const STANDAARD_DATA = {
     { id: 501, naam: "Milan Mertens", kampId: "k-5" }
   ],
   activiteiten: [
-    // Kerkers & Draken
     { id: "a-kd1", kampId: "k-1", naam: "D&D Roleplay Introductie", periodes: ["voormiddag"] },
     { id: "a-kd2", kampId: "k-1", naam: "Echte Zwaarden Maken", periodes: ["namiddag1"] },
     { id: "a-kd3", kampId: "k-1", naam: "Kasteel Larp & Speurtocht", periodes: ["namiddag2"] },
     { id: "a-kd4", kampId: "k-1", naam: "Nachtelijke Drakenjacht", periodes: ["avond"] },
 
-    // Surfen
     { id: "a-su1", kampId: "k-2", naam: "Golfsurfen Basis", periodes: ["voormiddag", "namiddag1"] },
     { id: "a-su2", kampId: "k-2", naam: "Bodyboarden & Waves", periodes: ["namiddag1", "namiddag2"] },
     { id: "a-su3", kampId: "k-2", naam: "Stand Up Paddle (SUP)", periodes: ["voormiddag", "namiddag2"] },
     { id: "a-su4", kampId: "k-2", naam: "Strandfeest & Surfmovie", periodes: ["avond"] },
 
-    // Z.E.E.
     { id: "a-ze1", kampId: "k-3", naam: "Garnaalvissen & Biologie", periodes: ["voormiddag"] },
     { id: "a-ze2", kampId: "k-3", naam: "Duin-expeditie & Survival", periodes: ["namiddag1"] },
     { id: "a-ze3", kampId: "k-3", naam: "Zeekajakken & Raften", periodes: ["namiddag2"] },
     { id: "a-ze4", kampId: "k-3", naam: "Kampvuur aan het Strand", periodes: ["avond"] },
 
-    // Think Tech
     { id: "a-tt1", kampId: "k-4", naam: "3D-Printen & Ontwerpen", periodes: ["voormiddag"] },
     { id: "a-tt2", kampId: "k-4", naam: "Robotica Challenge", periodes: ["namiddag1"] },
     { id: "a-tt3", kampId: "k-4", naam: "Drone Parcoers Vliegen", periodes: ["namiddag2"] },
     { id: "a-tt4", kampId: "k-4", naam: "VR Tech Night", periodes: ["avond"] },
 
-    // Gaming
-    { id: "a-gm1", kampId: "k-5", naam: "Esports Toernooi (Rocket League)", periodes: ["voormiddag"] },
+    { id: "a-gm1", kampId: "k-5", naam: "Esports Toernooi", periodes: ["voormiddag"] },
     { id: "a-gm2", kampId: "k-5", naam: "Retro Gaming Arcade", periodes: ["namiddag1"] },
     { id: "a-gm3", kampId: "k-5", naam: "Real-Life Mario Kart", periodes: ["namiddag2"] },
-    { id: "a-gm4", kampId: "k-5",
+    { id: "a-gm4", kampId: "k-5", naam: "LAN-Party & Pizza", periodes: ["avond"] }
+  ],
+  keuzes: {}
+};
+
+let appData = { ...STANDAARD_DATA };
+
+// Data ophalen uit Firebase
+async function laadFirebaseData() {
+  const dbRef = ref(db);
+  try {
+    const snapshot = await get(child(dbRef, 'topvakantie'));
+    if (snapshot.exists()) {
+      appData = snapshot.val();
+      if (!appData.keuzes) appData.keuzes = {};
+    } else {
+      await set(ref(db, 'topvakantie'), STANDAARD_DATA);
+    }
+    initApp();
+  } catch (error) {
+    console.error(error);
+    showModal("Fout bij laden", "Kon geen verbinding maken met Firebase.");
+  }
+}
+
+function initApp() {
+  vulDropdowns();
+  updateOverzicht();
+}
+
+function vulDropdowns() {
+  const kampSelect = document.getElementById('kampSelect');
+  const overzichtSelect = document.getElementById('overzichtKampSelect');
+  const nieuwKampSelect = document.getElementById('nieuwDeelnemerKamp');
+
+  kampSelect.innerHTML = '<option value="">-- Selecteer een Deelkamp --</option>';
+  overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen --</option>';
+  nieuwKampSelect.innerHTML = '';
+
+  appData.deelkampen.forEach(kamp => {
+    kampSelect.innerHTML += `<option value="${kamp.id}">${kamp.naam}</option>`;
+    overzichtSelect.innerHTML += `<option value="${kamp.id}">${kamp.naam}</option>`;
+    nieuwKampSelect.innerHTML += `<option value="${kamp.id}">${kamp.naam}</option>`;
+  });
+}
+
+window.onKampChange = function() {
+  const kampId = document.getElementById('kampSelect').value;
+  const container = document.getElementById('deelnemersContainer');
+  const actionsBar = document.getElementById('actionsBar');
+  const badge = document.getElementById('kampBadge');
+
+  container.innerHTML = '';
+
+  if (!kampId) {
+    actionsBar.style.display = 'none';
+    badge.textContent = 'Selecteer een kamp';
+    container.innerHTML = '<div class="empty-state">Kies hierboven een deelkamp om te beginnen.</div>';
+    return;
+  }
+
+  const kamp = appData.deelkampen.find(k => k.id === kampId);
+  badge.textContent = kamp.naam;
+  actionsBar.style.display = 'flex';
+
+  const deelnemers = appData.deelnemers.filter(d => d.kampId === kampId);
+
+  if (deelnemers.length === 0) {
+    container.innerHTML = '<div class="empty-state">Geen deelnemers gevonden in dit kamp.</div>';
+    return;
+  }
+
+  const periodes = [
+    { id: 'voormiddag', label: 'Voormiddag' },
+    { id: 'namiddag1', label: 'Namiddag 1' },
+    { id: 'namiddag2', label: 'Namiddag 2' },
+    { id: 'avond', label: 'Avond' }
+  ];
+
+  deelnemers.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'deelnemer-card';
+
+    let gridHtml = '';
+    periodes.forEach(p => {
+      const mogelijkeAct = appData.activiteiten.filter(a => a.kampId === kampId && a.periodes.includes(p.id));
+      const key = `${d.id}_${p.id}`;
+      const geselecteerd = appData.keuzes[key] || '';
+
+      let options = '<option value="">-- Geen --</option>';
+      mogelijkeAct.forEach(a => {
+        options += `<option value="${a.id}" ${geselecteerd === a.id ? 'selected' : ''}>${a.naam}</option>`;
+      });
+
+      gridHtml += `
+        <div class="periode-box">
+          <div class="periode-title">${p.label}</div>
+          <select data-deelnemer="${d.id}" data-periode="${p.id}">${options}</select>
+        </div>
+      `;
+    });
+
+    card.innerHTML = `
+      <div class="deelnemer-naam">${d.naam}</div>
+      <div class="periodes-grid">${gridHtml}</div>
+    `;
+
+    container.appendChild(card);
+  });
+};
+
+window.opslaanKeuzes = async function() {
+  const selects = document.querySelectorAll('select[data-deelnemer]');
+  selects.forEach(s => {
+    const dId = s.dataset.deelnemer;
+    const p = s.dataset.periode;
+    appData.keuzes[`${dId}_${p}`] = s.value;
+  });
+
+  try {
+    await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
+    showModal("Opgeslagen!", "De keuzes zijn live opgeslagen in Firebase.");
+    updateOverzicht();
+  } catch (err) {
+    showModal("Fout", "Er is iets misgegaan bij het opslaan in Firebase.");
+  }
+};
+
+window.exportCSV = function() {
+  let csv = 'Deelnemer,Kamp,Voormiddag,Namiddag 1,Namiddag 2,Avond\n';
+
+  appData.deelnemers.forEach(d => {
+    const kamp = appData.deelkampen.find(k => k.id === d.kampId);
+    const getActNaam = (p) => {
+      const actId = appData.keuzes[`${d.id}_${p}`];
+      const act = appData.activiteiten.find(a => a.id === actId);
+      return act ? `"${act.naam}"` : 'Geen';
+    };
+
+    csv += `"${d.naam}","${kamp ? kamp.naam : ''}",${getActNaam('voormiddag')},${getActNaam('namiddag1')},${getActNaam('namiddag2')},${getActNaam('avond')}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'Topvakantie_Keuzes.csv';
+  link.click();
+};
+
+window.updateOverzicht = function() {
+  const filterKamp = document.getElementById('overzichtKampSelect').value;
+  const container = document.getElementById('overzichtContainer');
+  container.innerHTML = '';
+
+  const gefilterdeAct = filterKamp 
+    ? appData.activiteiten.filter(a => a.kampId === filterKamp)
+    : appData.activiteiten;
+
+  gefilterdeAct.forEach(act => {
+    const ingeschreven = [];
+    appData.deelnemers.forEach(d => {
+      ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
+        if (appData.keuzes[`${d.id}_${p}`] === act.id) {
+          ingeschreven.push(`${d.naam} (${p})`);
+        }
+      });
+    });
+
+    const card = document.createElement('div');
+    card.className = 'overzicht-card';
+    card.innerHTML = `
+      <h3>${act.naam}</h3>
+      <p><strong>Aantal inschrijvingen:</strong> ${ingeschreven.length}</p>
+      <div class="deelnemers-tags">
+        ${ingeschreven.length > 0 
+          ? ingeschreven.map(n => `<span class="tag">${n}</span>`).join('') 
+          : '<em>Nog geen inschrijvingen</em>'}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+};
+
+window.voegDeelnemerToe = async function() {
+  const naamInput = document.getElementById('nieuwDeelnemerNaam');
+  const kampId = document.getElementById('nieuwDeelnemerKamp').value;
+
+  if (!naamInput.value.trim()) {
+    showModal("Fout", "Vul een naam in.");
+    return;
+  }
+
+  const nieuw = {
+    id: Date.now(),
+    naam: naamInput.value.trim(),
+    kampId: kampId
+  };
+
+  appData.deelnemers.push(nieuw);
+  await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
+  
+  naamInput.value = '';
+  showModal("Toegevoegd", "Deelnemer is succesvol toegevoegd!");
+  if (document.getElementById('kampSelect').value === kampId) {
+    window.onKampChange();
+  }
+};
+
+window.resetDatabase = async function() {
+  await set(ref(db, 'topvakantie'), STANDAARD_DATA);
+  appData = { ...STANDAARD_DATA };
+  initApp();
+  showModal("Reset voltooid", "Firebase is teruggezet naar de standaarddata.");
+};
+
+window.openTab = function(tabName) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  
+  document.getElementById(`tab-${tabName}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+};
+
+function showModal(title, msg) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMessage').textContent = msg;
+  document.getElementById('customModal').style.display = 'flex';
+}
+
+window.closeModal = function() {
+  document.getElementById('customModal').style.display = 'none';
+};
+
+laadFirebaseData();
