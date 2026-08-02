@@ -25,25 +25,47 @@
     <button class="tab-btn" onclick="openTab('beheer')">Beheer & Data 🔒</button>
   </nav>
 
-  <!-- TAB 1: KEUZES INVOEREN -->
+  <!-- TAB 1: KEUZES INVOEREN PER DEELNEMER -->
   <div id="tab-selectie" class="tab-content active">
+    
     <div class="kamp-selector-card">
-      <label for="kampSelect"><strong>Kies het Deelkamp:</strong></label>
-      <select id="kampSelect" onchange="onKampChange()">
-        <option value="">-- Selecteer een Deelkamp --</option>
-      </select>
+      <div class="form-group flex-grow">
+        <label for="kampSelect"><strong>Kies het Deelkamp:</strong></label>
+        <select id="kampSelect" onchange="onKampChange()">
+          <option value="">-- Selecteer een Deelkamp --</option>
+        </select>
+      </div>
     </div>
 
-    <!-- SECTIE 1: AANBOD PER PERIODE INSTELLEN -->
+    <!-- SECTIE 1: AANBOD AANPASSEN PER PERIODE -->
     <div id="instellingenSectie" style="display:none;" class="admin-card margin-bottom">
       <div class="flex-between">
-        <h3>1. Welke activiteiten zijn mogelijk tijdens dit kamp?</h3>
-        <button class="btn btn-secondary btn-sm" onclick="toggleAanbodPaneel()">Aanbod Aanpassen</button>
+        <h3>1. Selecteer welke activiteiten er nu mogelijk zijn per periode</h3>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAanbodPaneel()">Aanbod Openen / Sluiten</button>
       </div>
       
       <div id="aanbodPaneel" style="display:none; margin-top: 15px;">
-        <p class="help-text">Vink aan welke keuzeactiviteiten uit de database beschikbaar zijn voor dit specifieke kamp:</p>
-        <div id="aanbodCheckboxesGrid" class="checkbox-matrix"></div>
+        <p class="help-text">Vink hieronder aan welke activiteiten uit de totale database er per periode kiest-baar zijn:</p>
+        
+        <div class="periodes-aanbod-grid">
+          <div class="periode-aanbod-box">
+            <h4 class="periode-title">Voormiddag</h4>
+            <div id="aanbod-voormiddag" class="checkbox-list"></div>
+          </div>
+          <div class="periode-aanbod-box">
+            <h4 class="periode-title">Namiddag 1</h4>
+            <div id="aanbod-namiddag1" class="checkbox-list"></div>
+          </div>
+          <div class="periode-aanbod-box">
+            <h4 class="periode-title">Namiddag 2</h4>
+            <div id="aanbod-namiddag2" class="checkbox-list"></div>
+          </div>
+          <div class="periode-aanbod-box">
+            <h4 class="periode-title">Avond</h4>
+            <div id="aanbod-avond" class="checkbox-list"></div>
+          </div>
+        </div>
+
         <button class="btn btn-primary margin-top" onclick="opslaanAanbod()">Aanbod Voor Dit Kamp Opslaan</button>
       </div>
     </div>
@@ -57,7 +79,7 @@
 
     <div id="deelnemersContainer">
       <div class="empty-state">
-        Kies hierboven een deelkamp om de deelnemers en hun keuzes te beheren.
+        Kies hierboven een deelkamp om de keuzes te beheren.
       </div>
     </div>
   </div>
@@ -65,10 +87,12 @@
   <!-- TAB 2: OVERZICHT PER ACTIVITEIT -->
   <div id="tab-overzicht" class="tab-content">
     <div class="kamp-selector-card">
-      <label for="overzichtKampSelect"><strong>Filter op Kamp:</strong></label>
-      <select id="overzichtKampSelect" onchange="updateOverzicht()">
-        <option value="">-- Alle Deelkampen --</option>
-      </select>
+      <div class="form-group flex-grow">
+        <label for="overzichtKampSelect"><strong>Filter op Kamp:</strong></label>
+        <select id="overzichtKampSelect" onchange="updateOverzicht()">
+          <option value="">-- Alle Deelkampen --</option>
+        </select>
+      </div>
     </div>
 
     <div id="overzichtContainer"></div>
@@ -80,7 +104,7 @@
     <!-- WACHTWOORD FORMULIER -->
     <div id="loginFormCard" class="admin-card max-width-center">
       <h3>Beheer Beveiligd 🔒</h3>
-      <p>Voer het beheerderswachtwoord in om toegang te krijgen tot de instellingen.</p>
+      <p>Voer het beheerderswachtwoord in om toegang te krijgen tot de masterdatabase.</p>
       <div class="form-group">
         <label>Wachtwoord:</label>
         <input type="password" id="adminWachtwoordInput" placeholder="Voer wachtwoord in">
@@ -88,7 +112,7 @@
       <button class="btn btn-primary" onclick="verifieerWachtwoord()">Inloggen</button>
     </div>
 
-    <!-- INHOUD BEHEER (PAS ZICHTBAAR NA INLOGGEN) -->
+    <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
       <!-- KAMP TOEVOEGEN -->
@@ -117,24 +141,13 @@
 
       <!-- MASTER ACTIVITEIT TOEVOEGEN -->
       <div class="admin-card full-width">
-        <h3>3. Nieuwe Activiteit toevoegen aan Master-Database</h3>
-        <p class="help-text">Voeg activiteiten toe aan de centrale bibliotheek. Daarna kun je ze per kamp koppelen.</p>
-        <div class="admin-grid-inner">
-          <div class="form-group">
-            <label>Naam Activiteit:</label>
-            <input type="text" id="nieuwActNaam" placeholder="bijv. Archery Tag of D&D Intro">
-          </div>
-          <div class="form-group">
-            <label>Mogelijke Periodes:</label>
-            <div class="checkbox-group">
-              <label><input type="checkbox" class="act-periode" value="voormiddag"> Voormiddag</label>
-              <label><input type="checkbox" class="act-periode" value="namiddag1"> Namiddag 1</label>
-              <label><input type="checkbox" class="act-periode" value="namiddag2"> Namiddag 2</label>
-              <label><input type="checkbox" class="act-periode" value="avond"> Avond</label>
-            </div>
-          </div>
+        <h3>3. Totale Activiteiten Database (Master-Lijst)</h3>
+        <p class="help-text">Voeg hier alle activiteiten toe die ooit georganiseerd kunnen worden.</p>
+        <div class="form-group">
+          <label>Naam Activiteit:</label>
+          <input type="text" id="nieuwActNaam" placeholder="bijv. Archery Tag, Vlotten Bouwen, Kasteel Larp...">
         </div>
-        <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Database</button>
+        <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Totale Database</button>
       </div>
 
       <!-- WACHTWOORD WIJZIGEN -->
