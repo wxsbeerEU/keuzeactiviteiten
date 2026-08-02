@@ -20,7 +20,7 @@ let appData = {
   deelkampen: [],
   deelnemers: [],
   masterActiviteiten: [],
-  periodeAanbod: {},
+  periodeAanbod: {}, // { kampId: { voormiddag: [ { actId: "...", max: 10 } ] } }
   keuzes: {},
   adminHash: STANDAARD_HASH
 };
@@ -35,7 +35,6 @@ async function hashWachtwoord(wachtwoord) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Sorteerfuncties
 function sorteerOpNaam(array) {
   return array.sort((a, b) => a.naam.localeCompare(b.naam, 'nl', { sensitivity: 'base' }));
 }
@@ -53,7 +52,6 @@ async function laadFirebaseData() {
       if (!appData.keuzes) appData.keuzes = {};
       if (!appData.adminHash) appData.adminHash = STANDAARD_HASH;
 
-      // Alfabetisch sorteren bij het inladen
       appData.deelkampen = sorteerOpNaam(appData.deelkampen);
       appData.deelnemers = sorteerOpNaam(appData.deelnemers);
       appData.masterActiviteiten = sorteerOpNaam(appData.masterActiviteiten);
@@ -95,31 +93,30 @@ function vulKampCheckboxes() {
 function vulDropdowns() {
   const overzichtSelect = document.getElementById('overzichtKampSelect');
   const nieuwDeelnemerKamp = document.getElementById('nieuwDeelnemerKamp');
-  const beheerKampSelect = document.getElementById('beheerKampSelect');
 
   overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen --</option>';
   nieuwDeelnemerKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
-  beheerKampSelect.innerHTML = '<option value="">-- Kies Kamp --</option>';
 
   appData.deelkampen.forEach(kamp => {
     const opt = `<option value="${kamp.id}">${kamp.naam}</option>`;
     overzichtSelect.innerHTML += opt;
     nieuwDeelnemerKamp.innerHTML += opt;
-    beheerKampSelect.innerHTML += opt;
   });
 }
 
-// 1. MEERDERE KAMPEN SELECTEREN
+// 1. KAMP SELECTIE EN AANBOD PERIODE INSTELLEN
 window.onKampSelectionChange = function() {
   const geselecteerdeKampIds = Array.from(document.querySelectorAll('.kamp-select-cb:checked')).map(cb => cb.value);
   const container = document.getElementById('deelnemersContainer');
   const actionsBar = document.getElementById('actionsBar');
   const badge = document.getElementById('kampBadge');
+  const instellingenSectie = document.getElementById('instellingenSectie');
 
   container.innerHTML = '';
 
   if (geselecteerdeKampIds.length === 0) {
     actionsBar.style.display = 'none';
+    instellingenSectie.style.display = 'none';
     badge.textContent = 'Geen kampen geselecteerd';
     container.innerHTML = '<div class="empty-state">Vink hierboven één of meerdere deelkampen aan om te beginnen.</div>';
     return;
@@ -132,12 +129,84 @@ window.onKampSelectionChange = function() {
 
   badge.textContent = kampNamen;
   actionsBar.style.display = 'flex';
+  instellingenSectie.style.display = 'block';
 
+  renderAanbodCheckboxesMulti(geselecteerdeKampIds);
   renderDeelnemersFormulierMulti(geselecteerdeKampIds);
 };
 
+window.toggleAanbodPaneel = function() {
+  const paneel = document.getElementById('aanbodPaneel');
+  paneel.style.display = paneel.style.display === 'none' ? 'block' : 'none';
+};
+
+function renderAanbodCheckboxesMulti(geselecteerdeKampIds) {
+  const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
+  const primairKampId = geselecteerdeKampIds[0];
+  const primairAanbod = appData.periodeAanbod[primairKampId] || {};
+
+  periodes.forEach(p => {
+    const box = document.getElementById(`aanbod-${p}`);
+    const geselecteerdeItems = primairAanbod[p] || [];
+
+    if (appData.masterActiviteiten.length === 0) {
+      box.innerHTML = '<em>Geen activiteiten in Master-database.</em>';
+      return;
+    }
+
+    box.innerHTML = appData.masterActiviteiten.map(act => {
+      const bestaand = geselecteerdeItems.find(i => i.actId === act.id);
+      const isChecked = !!bestaand;
+      const maxVal = bestaand ? (bestaand.max || 0) : 0;
+
+      return `
+        <div class="beheer-item">
+          <div class="beheer-item-row">
+            <input type="checkbox" class="cb-aanbod-${p}" value="${act.id}" ${isChecked}>
+            <strong>${act.naam}</strong>
+          </div>
+          <div class="max-input-group">
+            <label>Max. pers. (0 = $\infty$):</label>
+            <input type="number" min="0" class="max-aanbod-${p}" data-act="${act.id}" value="${maxVal}">
+          </div>
+        </div>
+      `;
+    }).join('');
+  });
+}
+
+window.opslaanAanbodMulti = async function() {
+  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.kamp-select-cb:checked')).map(cb => cb.value);
+  const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
+
+  for (const kampId of geselecteerdeKampIds) {
+    if (!appData.periodeAanbod[kampId]) appData.periodeAanbod[kampId] = {};
+
+    periodes.forEach(p => {
+      const cbs = document.querySelectorAll(`.cb-aanbod-${p}:checked`);
+      const items = [];
+
+      cbs.forEach(cb => {
+        const actId = cb.value;
+        const maxInput = document.querySelector(`.max-aanbod-${p}[data-act="${actId}"]`);
+        const maxVal = parseInt(maxInput ? maxInput.value : 0) || 0;
+        items.push({ actId: actId, max: maxVal });
+      });
+
+      appData.periodeAanbod[kampId][p] = items;
+    });
+
+    await set(ref(db, `topvakantie/periodeAanbod/${kampId}`), appData.periodeAanbod[kampId]);
+  }
+
+  showModal("Opgeslagen", "Het activiteitenaanbod en de capaciteit zijn opgeslagen voor de geselecteerde kamp(en).");
+  document.getElementById('aanbodPaneel').style.display = 'none';
+  renderDeelnemersFormulierMulti(geselecteerdeKampIds);
+};
+
+// 2. KEUZES FORMULIER
 function berekenAantallenMulti(geselecteerdeKampIds) {
-  const aantallen = {}; // { "kampId_voormiddag_actId": 3 }
+  const aantallen = {};
   const deelnemersInKampen = appData.deelnemers.filter(d => geselecteerdeKampIds.includes(d.kampId));
 
   deelnemersInKampen.forEach(d => {
@@ -157,9 +226,7 @@ function renderDeelnemersFormulierMulti(geselecteerdeKampIds) {
   const container = document.getElementById('deelnemersContainer');
   let deelnemers = appData.deelnemers.filter(d => geselecteerdeKampIds.includes(d.kampId));
   
-  // Alfabetisch op naam sorteren
   deelnemers = sorteerOpNaam(deelnemers);
-
   const huidigeAantallen = berekenAantallenMulti(geselecteerdeKampIds);
 
   if (deelnemers.length === 0) {
@@ -193,7 +260,6 @@ function renderDeelnemersFormulierMulti(geselecteerdeKampIds) {
 
       let options = '<option value="">-- Geen --</option>';
       
-      // Activiteiten binnen dropdown alfabetisch sorteren
       const mogelijkeMasterAct = appData.masterActiviteiten.filter(a => toegestaneItems.some(item => item.actId === a.id));
       sorteerOpNaam(mogelijkeMasterAct);
 
@@ -259,79 +325,6 @@ window.opslaanKeuzes = async function() {
   }
 };
 
-// 2. BEHEER: AANBOD & CAPACITEIT INSTELLEN
-window.renderBeheerAanbodGrid = function() {
-  const kampId = document.getElementById('beheerKampSelect').value;
-  const container = document.getElementById('beheerAanbodContainer');
-
-  if (!kampId) {
-    container.style.display = 'none';
-    return;
-  }
-
-  container.style.display = 'block';
-  const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
-  const kampAanbod = appData.periodeAanbod[kampId] || {};
-
-  periodes.forEach(p => {
-    const box = document.getElementById(`beheer-aanbod-${p}`);
-    const geselecteerdeItems = kampAanbod[p] || [];
-
-    if (appData.masterActiviteiten.length === 0) {
-      box.innerHTML = '<em>Geen activiteiten in Master-database.</em>';
-      return;
-    }
-
-    box.innerHTML = appData.masterActiviteiten.map(act => {
-      const bestaand = geselecteerdeItems.find(i => i.actId === act.id);
-      const isChecked = !!bestaand;
-      const maxVal = bestaand ? (bestaand.max || 0) : 0;
-
-      return `
-        <div class="beheer-item">
-          <div class="beheer-item-row">
-            <input type="checkbox" class="cb-beheer-${p}" value="${act.id}" ${isChecked}>
-            <strong>${act.naam}</strong>
-          </div>
-          <div class="max-input-group">
-            <label>Max. pers. (0 = $\infty$):</label>
-            <input type="number" min="0" class="max-beheer-${p}" data-act="${act.id}" value="${maxVal}">
-          </div>
-        </div>
-      `;
-    }).join('');
-  });
-};
-
-window.opslaanBeheerAanbod = async function() {
-  const kampId = document.getElementById('beheerKampSelect').value;
-  const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
-
-  if (!appData.periodeAanbod[kampId]) appData.periodeAanbod[kampId] = {};
-
-  periodes.forEach(p => {
-    const cbs = document.querySelectorAll(`.cb-beheer-${p}:checked`);
-    const items = [];
-
-    cbs.forEach(cb => {
-      const actId = cb.value;
-      const maxInput = document.querySelector(`.max-beheer-${p}[data-act="${actId}"]`);
-      const maxVal = parseInt(maxInput ? maxInput.value : 0) || 0;
-      items.push({ actId: actId, max: maxVal });
-    });
-
-    appData.periodeAanbod[kampId][p] = items;
-  });
-
-  await set(ref(db, `topvakantie/periodeAanbod/${kampId}`), appData.periodeAanbod[kampId]);
-  showModal("Opgeslagen", "Het activiteitenaanbod en de capaciteit zijn opgeslagen.");
-
-  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.kamp-select-cb:checked')).map(cb => cb.value);
-  if (geselecteerdeKampIds.length > 0) {
-    renderDeelnemersFormulierMulti(geselecteerdeKampIds);
-  }
-};
-
 // 3. BEHEER & WACHTWOORD
 window.verifieerWachtwoord = async function() {
   const input = document.getElementById('adminWachtwoordInput').value.trim();
@@ -379,7 +372,6 @@ window.voegMasterActiviteitToe = async function() {
   await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
   input.value = '';
   renderBeheerLijsten();
-  if (document.getElementById('beheerKampSelect').value) renderBeheerAanbodGrid();
   showModal("Succes", `Activiteit "${naam}" toegevoegd aan Master-Database!`);
 };
 
@@ -469,8 +461,6 @@ window.updateOverzicht = function() {
   if (gefilterdeAct && gefilterdeAct.length > 0) {
     gefilterdeAct.forEach(act => {
       const ingeschreven = [];
-      
-      // Deelnemers gesorteerd verwerken
       const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
 
       deelnemersLijst.forEach(d => {
