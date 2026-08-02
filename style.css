@@ -1,20 +1,16 @@
 :root {
-  /* Kleurenpalet op basis van het Topvakantie logo */
-  --primary: #70b22a;          /* Topvakantie Appelgroen */
-  --primary-hover: #5d9622;    /* Donkerder groen voor hover */
-  --secondary: #004b87;        /* Topvakantie Blauw (van het uitroepteken) */
-  --secondary-hover: #003663;  /* Donkerder blauw voor hover */
-  --bg: #f4f7f2;               /* Zachte, frisse lichtgrijze/groene achtergrond */
+  --primary: #70b22a;          /* Topvakantie Groen */
+  --primary-hover: #5d9622;
+  --secondary: #004b87;        /* Topvakantie Blauw */
+  --secondary-hover: #003663;
+  --bg: #f4f7f2;
   --card-bg: #ffffff;
   --text: #1a2530;
   --border: #dbe4d5;
-  --success: #2e7d32;
   --danger: #c62828;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -24,12 +20,8 @@ body {
   padding: 20px;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
+.container { max-width: 1200px; margin: 0 auto; }
 
-/* Header in de stijl van het Topvakantie logo */
 header {
   background: linear-gradient(135deg, var(--primary) 0%, #8bc53f 100%);
   color: white;
@@ -42,22 +34,9 @@ header {
   box-shadow: 0 4px 14px rgba(112, 178, 42, 0.25);
 }
 
-.header-title h1 {
-  margin: 0 0 5px 0;
-  font-size: 1.9rem;
-  font-weight: 800;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
+.header-title h1 { margin: 0 0 5px 0; font-size: 1.9rem; font-weight: 800; color: white; }
+.header-title p { margin: 0; opacity: 0.95; font-size: 0.95rem; }
 
-.header-title p {
-  margin: 0;
-  opacity: 0.95;
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-/* Blauwe badge (geïnspireerd door het uitroepteken) */
 .badge {
   background: var(--secondary);
   color: white;
@@ -65,10 +44,8 @@ header {
   border-radius: 20px;
   font-weight: bold;
   font-size: 0.9rem;
-  box-shadow: 0 2px 6px rgba(0, 75, 135, 0.2);
 }
 
-/* Navigatie Tabs */
 .nav-tabs {
   display: flex;
   gap: 10px;
@@ -89,26 +66,12 @@ header {
   transition: all 0.2s;
 }
 
-.tab-btn:hover {
-  color: var(--secondary);
-  background: rgba(112, 178, 42, 0.1);
-}
+.tab-btn:hover { color: var(--secondary); background: rgba(112, 178, 42, 0.1); }
+.tab-btn.active { color: var(--secondary); border-bottom: 4px solid var(--primary); background: white; }
 
-.tab-btn.active {
-  color: var(--secondary);
-  border-bottom: 4px solid var(--primary);
-  background: white;
-}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-}
-
-/* Selector Cards */
 .kamp-selector-card {
   background: var(--card-bg);
   padding: 20px;
@@ -118,37 +81,22 @@ header {
   display: flex;
   align-items: center;
   gap: 15px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
 }
 
-.kamp-selector-card label {
-  color: var(--secondary);
-}
-
-select, input {
+select, input[type="text"] {
   padding: 10px 14px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s;
 }
 
-select:focus, input:focus {
+select:focus, input[type="text"]:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(112, 178, 42, 0.15);
 }
 
-.kamp-selector-card select {
-  min-width: 300px;
-}
-
-/* Actiebalk & Knoppen */
-.actions-bar {
-  display: none;
-  gap: 12px;
-  margin-bottom: 20px;
-}
+.actions-bar { display: none; gap: 12px; margin-bottom: 20px; }
 
 .btn {
   padding: 11px 20px;
@@ -160,43 +108,19 @@ select:focus, input:focus {
   transition: all 0.2s;
 }
 
-.btn-primary { 
-  background: var(--primary); 
-  color: white; 
-}
+.btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--secondary); color: white; }
+.btn-secondary:hover { background: var(--secondary-hover); }
+.btn-danger { background: var(--danger); color: white; }
 
-.btn-primary:hover { 
-  background: var(--primary-hover); 
-  box-shadow: 0 3px 8px rgba(112, 178, 42, 0.3);
-}
-
-.btn-secondary { 
-  background: var(--secondary); 
-  color: white; 
-}
-
-.btn-secondary:hover { 
-  background: var(--secondary-hover); 
-  box-shadow: 0 3px 8px rgba(0, 75, 135, 0.3);
-}
-
-.btn-danger { 
-  background: var(--danger); 
-  color: white; 
-}
-
-.btn-danger:hover { 
-  background: #b71c1c; 
-}
-
-/* Deelnemer Kaarten */
 .deelnemer-card {
   background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
   border: 1px solid var(--border);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
 .deelnemer-naam {
@@ -227,16 +151,10 @@ select:focus, input:focus {
   text-transform: uppercase;
   color: var(--primary);
   margin-bottom: 8px;
-  letter-spacing: 0.5px;
 }
 
-.periode-box select {
-  width: 100%;
-  font-size: 0.88rem;
-  border-color: #d0ded0;
-}
+.periode-box select { width: 100%; font-size: 0.88rem; }
 
-/* Empty State */
 .empty-state {
   text-align: center;
   padding: 40px;
@@ -244,31 +162,19 @@ select:focus, input:focus {
   border-radius: 12px;
   color: #64748b;
   border: 2px dashed var(--border);
-  font-weight: 500;
 }
 
-/* Overzicht Tab */
 .overzicht-card {
   background: white;
   padding: 20px;
   border-radius: 12px;
   margin-bottom: 15px;
   border: 1px solid var(--border);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
 
-.overzicht-card h3 {
-  margin-top: 0;
-  color: var(--secondary);
-  font-size: 1.2rem;
-}
+.overzicht-card h3 { margin-top: 0; color: var(--secondary); }
 
-.deelnemers-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
+.deelnemers-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
 .tag {
   background: #f0f7e8;
@@ -280,10 +186,10 @@ select:focus, input:focus {
   border: 1px solid #cce2b5;
 }
 
-/* Beheer Tab */
+/* Beheer grid */
 .admin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
 }
 
@@ -294,27 +200,22 @@ select:focus, input:focus {
   border: 1px solid var(--border);
 }
 
-.admin-card h3 {
-  color: var(--secondary);
-  margin-top: 0;
-}
+.admin-card.full-width { grid-column: 1 / -1; }
+.admin-grid-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-.form-group {
-  margin-bottom: 15px;
-}
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; margin-bottom: 5px; font-weight: 700; color: var(--text); }
+.form-group input[type="text"], .form-group select { width: 100%; }
 
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 700;
-  color: var(--text);
-}
+.checkbox-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 5px; }
+.checkbox-group label { font-weight: normal; cursor: pointer; }
 
-.form-group input, .form-group select {
-  width: 100%;
-}
+/* Table Beheer */
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.admin-table th, .admin-table td { padding: 10px; border: 1px solid var(--border); text-align: left; }
+.admin-table th { background: #f0f7e8; color: var(--secondary); }
 
-/* Modal Popup */
+/* Modal */
 .modal-backdrop {
   display: none;
   position: fixed;
@@ -335,12 +236,4 @@ select:focus, input:focus {
   border-top: 6px solid var(--primary);
 }
 
-.modal h3 {
-  color: var(--secondary);
-  margin-top: 0;
-}
-
-.modal-actions {
-  text-align: right;
-  margin-top: 20px;
-}
+.modal-actions { text-align: right; margin-top: 20px; }
