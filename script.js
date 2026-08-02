@@ -20,7 +20,7 @@ let appData = {
   deelkampen: [],
   deelnemers: [],
   masterActiviteiten: [],
-  periodeAanbod: {}, // Structuur: { kampId: { voormiddag: ["actId1"], namiddag1: ["actId2"] ... } }
+  periodeAanbod: {},
   keuzes: {},
   adminHash: STANDAARD_HASH
 };
@@ -79,7 +79,7 @@ function vulDropdowns() {
   });
 }
 
-// 1. KAMP WIZIGING EN AANBOD INSTELLEN
+// 1. KAMP SELECTIE & AANBOD
 window.onKampChange = function() {
   const kampId = document.getElementById('kampSelect').value;
   const container = document.getElementById('deelnemersContainer');
@@ -268,7 +268,7 @@ window.voegMasterActiviteitToe = async function() {
   await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
   input.value = '';
   renderBeheerLijsten();
-  showModal("Succes", `Activiteit "${naam}" toegevoegd aan Totale Database!`);
+  showModal("Succes", `Activiteit "${naam}" toegevoegd aan Master-Database!`);
 };
 
 window.voegKampToe = async function() {
