@@ -194,7 +194,6 @@ select:focus, input:focus {
 .help-text { font-size: 0.9rem; color: #64748b; margin-top: -5px; }
 .max-width-center { max-width: 450px; margin: 40px auto; }
 
-/* Grid voor aanbod selectie per periode */
 .periodes-aanbod-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -213,7 +212,7 @@ select:focus, input:focus {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
 }
 
