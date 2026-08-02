@@ -8,6 +8,7 @@
   --text: #1a2530;
   --border: #dbe4d5;
   --danger: #c62828;
+  --warning: #f59e0b;
 }
 
 * { box-sizing: border-box; }
@@ -77,7 +78,7 @@ header {
   padding: 20px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   display: flex;
   align-items: center;
   gap: 20px;
@@ -85,6 +86,44 @@ header {
 
 .flex-grow { flex-grow: 1; }
 .margin-top-sm { margin-top: 8px; }
+
+/* Voortgangsbalk & Zoekbalk */
+.progress-card {
+  background: white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: var(--secondary);
+}
+
+.progress-bar-bg {
+  background: #e2e8f0;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  background: var(--primary);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.search-bar-card input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+}
 
 select, input[type="text"], input[type="password"], input[type="number"] {
   padding: 10px 14px;
@@ -125,16 +164,33 @@ select:focus, input:focus {
   padding: 20px;
   margin-bottom: 16px;
   border: 1px solid var(--border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+
+.deelnemer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #f0f4ec;
+  padding-bottom: 10px;
 }
 
 .deelnemer-naam {
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--secondary);
-  margin-bottom: 15px;
-  border-bottom: 2px solid #f0f4ec;
-  padding-bottom: 10px;
 }
+
+.status-tag {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.status-tag.complete { background: #dcfce7; color: #15803d; }
+.status-tag.incomplete { background: #fef3c7; color: #b45309; }
 
 .periodes-grid {
   display: grid;
@@ -194,11 +250,11 @@ select:focus, input:focus {
 .help-text { font-size: 0.9rem; color: #64748b; margin-top: -5px; }
 .max-width-center { max-width: 450px; margin: 40px auto; }
 
-/* Matrix checkboxes voor beheer */
+/* Matrix checkboxes */
 .checkbox-matrix {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
 }
 
