@@ -14,21 +14,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// SHA-256 hash van het standaardwachtwoord "topvakantie123"
 const STANDAARD_HASH = "b46be1c02ff4b9f2913f6312a149c9528643efc62cfd3bf49557457497d51ee2";
 
 let appData = {
   deelkampen: [],
   deelnemers: [],
   masterActiviteiten: [],
-  kampAanbod: {},
+  periodeAanbod: {}, // Structuur: { kampId: { voormiddag: ["actId1"], namiddag1: ["actId2"] ... } }
   keuzes: {},
   adminHash: STANDAARD_HASH
 };
 
 let isAdminIngelogd = false;
 
-// SHA-256 Hashing Functie
 async function hashWachtwoord(wachtwoord) {
   const encoder = new TextEncoder();
   const data = encoder.encode(wachtwoord);
@@ -46,7 +44,7 @@ async function laadFirebaseData() {
       if (!appData.deelkampen) appData.deelkampen = [];
       if (!appData.deelnemers) appData.deelnemers = [];
       if (!appData.masterActiviteiten) appData.masterActiviteiten = [];
-      if (!appData.kampAanbod) appData.kampAanbod = {};
+      if (!appData.periodeAanbod) appData.periodeAanbod = {};
       if (!appData.keuzes) appData.keuzes = {};
       if (!appData.adminHash) appData.adminHash = STANDAARD_HASH;
     } else {
@@ -81,7 +79,7 @@ function vulDropdowns() {
   });
 }
 
-// 1. KAMP SELECTIE EN AANBOD PER KAMP
+// 1. KAMP WIZIGING EN AANBOD INSTELLEN
 window.onKampChange = function() {
   const kampId = document.getElementById('kampSelect').value;
   const container = document.getElementById('deelnemersContainer');
@@ -114,34 +112,41 @@ window.toggleAanbodPaneel = function() {
 };
 
 function renderAanbodCheckboxes(kampId) {
-  const container = document.getElementById('aanbodCheckboxesGrid');
-  const actieveAanbod = appData.kampAanbod[kampId] || [];
+  const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
+  const kampAanbod = appData.periodeAanbod[kampId] || {};
 
-  if (appData.masterActiviteiten.length === 0) {
-    container.innerHTML = '<em>Er zitten nog geen activiteiten in de Master Database. Voeg ze toe via "Beheer & Data".</em>';
-    return;
-  }
+  periodes.forEach(p => {
+    const box = document.getElementById(`aanbod-${p}`);
+    const geselecteerde = kampAanbod[p] || [];
 
-  container.innerHTML = appData.masterActiviteiten.map(act => {
-    const isChecked = actieveAanbod.includes(act.id) ? 'checked' : '';
-    const periodesText = act.periodes ? act.periodes.join(', ') : 'alle';
-    return `
+    if (appData.masterActiviteiten.length === 0) {
+      box.innerHTML = '<em>Geen activiteiten in Master-database.</em>';
+      return;
+    }
+
+    box.innerHTML = appData.masterActiviteiten.map(act => `
       <label>
-        <input type="checkbox" class="kamp-act-cb" value="${act.id}" ${isChecked}>
-        <strong>${act.naam}</strong> <small>(${periodesText})</small>
+        <input type="checkbox" class="cb-aanbod-${p}" value="${act.id}" ${geselecteerde.includes(act.id) ? 'checked' : ''}>
+        ${act.naam}
       </label>
-    `;
-  }).join('');
+    `).join('');
+  });
 }
 
 window.opslaanAanbod = async function() {
   const kampId = document.getElementById('kampSelect').value;
-  const geselecteerdeActIds = Array.from(document.querySelectorAll('.kamp-act-cb:checked')).map(cb => cb.value);
+  const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
+  
+  if (!appData.periodeAanbod[kampId]) appData.periodeAanbod[kampId] = {};
 
-  appData.kampAanbod[kampId] = geselecteerdeActIds;
-  await set(ref(db, `topvakantie/kampAanbod/${kampId}`), geselecteerdeActIds);
+  periodes.forEach(p => {
+    const cbs = document.querySelectorAll(`.cb-aanbod-${p}:checked`);
+    appData.periodeAanbod[kampId][p] = Array.from(cbs).map(cb => cb.value);
+  });
 
-  showModal("Opgeslagen", "Het activiteitenaanbod voor dit kamp is bijgewerkt.");
+  await set(ref(db, `topvakantie/periodeAanbod/${kampId}`), appData.periodeAanbod[kampId]);
+
+  showModal("Opgeslagen", "Het activiteitenaanbod per periode is bijgewerkt.");
   document.getElementById('aanbodPaneel').style.display = 'none';
   renderDeelnemersFormulier(kampId);
 };
@@ -149,7 +154,7 @@ window.opslaanAanbod = async function() {
 function renderDeelnemersFormulier(kampId) {
   const container = document.getElementById('deelnemersContainer');
   const deelnemers = appData.deelnemers.filter(d => d.kampId === kampId);
-  const toegestaneActIds = appData.kampAanbod[kampId] || [];
+  const kampAanbod = appData.periodeAanbod[kampId] || {};
 
   if (deelnemers.length === 0) {
     container.innerHTML = '<div class="empty-state">Nog geen deelnemers in dit kamp. Voeg ze toe via "Beheer & Data".</div>';
@@ -171,9 +176,8 @@ function renderDeelnemersFormulier(kampId) {
 
     let gridHtml = '';
     periodes.forEach(p => {
-      const mogelijkeAct = appData.masterActiviteiten.filter(a => 
-        toegestaneActIds.includes(a.id) && a.periodes && a.periodes.includes(p.id)
-      );
+      const toegestaneActIds = kampAanbod[p.id] || [];
+      const mogelijkeAct = appData.masterActiviteiten.filter(a => toegestaneActIds.includes(a.id));
 
       const key = `${d.id}_${p.id}`;
       const geselecteerd = appData.keuzes[key] || '';
@@ -202,6 +206,7 @@ function renderDeelnemersFormulier(kampId) {
 
 window.opslaanKeuzes = async function() {
   const selects = document.querySelectorAll('select[data-deelnemer]');
+
   selects.forEach(s => {
     const dId = s.dataset.deelnemer;
     const p = s.dataset.periode;
@@ -210,24 +215,19 @@ window.opslaanKeuzes = async function() {
 
   try {
     await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
-    showModal("Opgeslagen!", "Keuzes zijn opgeslagen.");
+    showModal("Opgeslagen!", "Keuzes van de deelnemers zijn opgeslagen.");
     updateOverzicht();
   } catch (err) {
     showModal("Fout", "Kon niet opslaan in Firebase.");
   }
 };
 
-// 2. BEHEER & INLOGGEN
+// 2. BEHEER & WACHTWOORD
 window.verifieerWachtwoord = async function() {
   const input = document.getElementById('adminWachtwoordInput').value.trim();
-  
-  if (!input) {
-    return showModal("Toegang Geweigerd", "Vul een wachtwoord in.");
-  }
+  if (!input) return showModal("Toegang Geweigerd", "Vul een wachtwoord in.");
 
   const ingevoerdeHash = await hashWachtwoord(input);
-
-  // Zowel hashcontrole als rechtstreekse fallback op "topvakantie123"
   const isStandaardWachtwoord = input.toLowerCase() === "topvakantie123";
   const isHashCorrect = appData.adminHash && (ingevoerdeHash === appData.adminHash);
 
@@ -245,7 +245,7 @@ window.wijzigWachtwoord = async function() {
   const w1 = document.getElementById('nieuwWachtwoord1').value.trim();
   const w2 = document.getElementById('nieuwWachtwoord2').value.trim();
 
-  if (!w1 || w1 !== w2) return showModal("Fout", "Wachtwoorden komen niet overeen of zijn leeg.");
+  if (!w1 || w1 !== w2) return showModal("Fout", "Wachtwoorden komen niet overeen.");
 
   const nieuweHash = await hashWachtwoord(w1);
   appData.adminHash = nieuweHash;
@@ -259,20 +259,16 @@ window.wijzigWachtwoord = async function() {
 window.voegMasterActiviteitToe = async function() {
   const input = document.getElementById('nieuwActNaam');
   const naam = input.value.trim();
-  const checkedPeriodes = Array.from(document.querySelectorAll('.act-periode:checked')).map(cb => cb.value);
 
-  if (!naam || checkedPeriodes.length === 0) {
-    return showModal("Fout", "Vul de naam in en vink minstens 1 periode aan.");
-  }
+  if (!naam) return showModal("Fout", "Vul een naam in.");
 
-  const nieuw = { id: `mact-${Date.now()}`, naam: naam, periodes: checkedPeriodes };
+  const nieuw = { id: `mact-${Date.now()}`, naam: naam };
   appData.masterActiviteiten.push(nieuw);
 
   await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
   input.value = '';
-  document.querySelectorAll('.act-periode').forEach(cb => cb.checked = false);
   renderBeheerLijsten();
-  showModal("Succes", `Activiteit "${naam}" toegevoegd aan Master Database!`);
+  showModal("Succes", `Activiteit "${naam}" toegevoegd aan Totale Database!`);
 };
 
 window.voegKampToe = async function() {
@@ -310,13 +306,12 @@ window.voegDeelnemerToe = async function() {
 function renderBeheerLijsten() {
   const container = document.getElementById('beheerLijstContainer');
   let html = `
-    <h4>Master Activiteiten Bibliotheek (${appData.masterActiviteiten.length})</h4>
+    <h4>Totale Master Activiteiten Database (${appData.masterActiviteiten.length})</h4>
     <table class="admin-table">
-      <tr><th>Activiteit</th><th>Periodes</th><th>Actie</th></tr>
+      <tr><th>Activiteitnaam</th><th>Actie</th></tr>
       ${appData.masterActiviteiten.map(a => `
         <tr>
           <td>${a.naam}</td>
-          <td>${a.periodes ? a.periodes.join(', ') : ''}</td>
           <td><button class="btn btn-danger btn-sm" onclick="verwijderMasterAct('${a.id}')">Wissen</button></td>
         </tr>
       `).join('')}
@@ -389,7 +384,8 @@ window.updateOverzicht = function() {
 };
 
 window.exportCSV = function() {
-  let csv = 'Deelnemer,Kamp,Voormiddag,Namiddag 1,Namiddag 2,Avond\n';
+  let csv = `Deelnemer,Kamp,Voormiddag,Namiddag 1,Namiddag 2,Avond\n`;
+
   appData.deelnemers.forEach(d => {
     const kamp = appData.deelkampen.find(k => k.id === d.kampId);
     const getActNaam = (p) => {
@@ -403,7 +399,7 @@ window.exportCSV = function() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = 'Topvakantie_Keuzes.csv';
+  link.download = `Topvakantie_Keuzes.csv`;
   link.click();
 };
 
