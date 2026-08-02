@@ -1,1 +1,100 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Topvakantie Keuzeactiviteiten</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
+<div class="container">
+  <header>
+    <div class="header-title">
+      <h1>Topvakantie Keuzeactiviteiten</h1>
+      <p>Selectie- en beheersysteem voor kampactiviteiten</p>
+    </div>
+    <div class="header-badges">
+      <span class="badge" id="kampBadge">Selecteer een kamp</span>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="openTab('selectie')">Keuzes Invoeren</button>
+    <button class="tab-btn" onclick="openTab('overzicht')">Overzicht Per Activiteit</button>
+    <button class="tab-btn" onclick="openTab('beheer')">Beheer & Data</button>
+  </nav>
+
+  <!-- TAB 1: KEUZES INVOEREN -->
+  <div id="tab-selectie" class="tab-content active">
+    <div class="kamp-selector-card">
+      <label for="kampSelect"><strong>Kies het Deelkamp:</strong></label>
+      <select id="kampSelect" onchange="onKampChange()">
+        <option value="">-- Selecteer een Deelkamp --</option>
+      </select>
+    </div>
+
+    <div class="actions-bar" id="actionsBar">
+      <button class="btn btn-primary" onclick="opslaanKeuzes()">Keuzes Opslaan</button>
+      <button class="btn btn-secondary" onclick="exportCSV()">Export Excel (CSV)</button>
+      <button class="btn btn-secondary" onclick="window.print()">Afdrukken</button>
+    </div>
+
+    <div id="deelnemersContainer">
+      <div class="empty-state">
+        Kies hierboven een deelkamp om de deelnemers en hun keuzes te beheren.
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: OVERZICHT PER ACTIVITEIT -->
+  <div id="tab-overzicht" class="tab-content">
+    <div class="kamp-selector-card">
+      <label for="overzichtKampSelect"><strong>Filter op Kamp:</strong></label>
+      <select id="overzichtKampSelect" onchange="updateOverzicht()">
+        <option value="">-- Alle Deelkampen --</option>
+      </select>
+    </div>
+
+    <div id="overzichtContainer"></div>
+  </div>
+
+  <!-- TAB 3: BEHEER & DATA -->
+  <div id="tab-beheer" class="tab-content">
+    <div class="admin-grid">
+      <div class="admin-card">
+        <h3>Nieuwe Deelnemer Toevoegen</h3>
+        <div class="form-group">
+          <label>Naam Deelnemer:</label>
+          <input type="text" id="nieuwDeelnemerNaam" placeholder="Bijv. Lucas De Smet">
+        </div>
+        <div class="form-group">
+          <label>Deelkamp:</label>
+          <select id="nieuwDeelnemerKamp"></select>
+        </div>
+        <button class="btn btn-primary" onclick="voegDeelnemerToe()">Toevoegen</button>
+      </div>
+
+      <div class="admin-card">
+        <h3>Database Beheer</h3>
+        <p>Herstel de standaardgegevens of wis het lokale geheugen als je opnieuw wilt beginnen.</p>
+        <button class="btn btn-danger" onclick="resetDatabase()">Reset Naar Standaarddata</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Melding -->
+<div class="modal-backdrop" id="customModal">
+  <div class="modal">
+    <h3 id="modalTitle">Melding</h3>
+    <p id="modalMessage">Actie succesvol uitgevoerd.</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeModal()">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
