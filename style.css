@@ -83,7 +83,6 @@ header {
 .flex-column { flex-direction: column; }
 .align-start { align-items: flex-start; }
 .flex-grow { flex-grow: 1; }
-.max-width-300 { max-width: 300px; }
 .margin-top-sm { margin-top: 8px; }
 
 select, input[type="text"], input[type="password"], input[type="number"] {
@@ -204,12 +203,13 @@ select:focus, input:focus {
   border: 1px solid #cce2b5;
 }
 
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
 .margin-bottom { margin-bottom: 20px; }
 .margin-top { margin-top: 15px; }
 .help-text { font-size: 0.9rem; color: #64748b; margin-top: -5px; }
 .max-width-center { max-width: 450px; margin: 40px auto; }
 
-/* Matrix checkboxes */
+/* Matrix checkboxes voor kampselectie */
 .checkbox-matrix {
   display: flex;
   flex-wrap: wrap;
@@ -231,9 +231,7 @@ select:focus, input:focus {
   transition: background 0.2s;
 }
 
-.checkbox-label:hover {
-  background: #f0f7e8;
-}
+.checkbox-label:hover { background: #f0f7e8; }
 
 .periodes-aanbod-grid {
   display: grid;
@@ -301,7 +299,7 @@ select:focus, input:focus {
 
 .modal-backdrop {
   display: none;
-  position fixed;
+  position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0, 75, 135, 0.4);
   justify-content: center;
