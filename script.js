@@ -1,15 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// VUL HIER JOUW FIREBASE CONFIG IN (Van de Firebase Console)
+// firebaseConfig met jouw gegevens uit het screenshot
 const firebaseConfig = {
-  apiKey: "JOUW_API_KEY",
-  authDomain: "JOUW_PROJECT.firebaseapp.com",
-  databaseURL: "https://JOUW_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "JOUW_PROJECT",
-  storageBucket: "JOUW_PROJECT.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyCh9PosNaH57-_jxhqhd-eR2xy0e7qn4eg",
+  authDomain: "keuze-activiteiten.firebaseapp.com",
+  databaseURL: "https://keuze-activiteiten-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "keuze-activiteiten",
+  storageBucket: "keuze-activiteiten.firebasestorage.app",
+  messagingSenderId: "17400921565",
+  appId: "1:17400921565:web:93b28bc941303400694a34"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -63,7 +63,6 @@ const STANDAARD_DATA = {
 
 let appData = { ...STANDAARD_DATA };
 
-// Data ophalen uit Firebase
 async function laadFirebaseData() {
   const dbRef = ref(db);
   try {
