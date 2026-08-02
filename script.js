@@ -14,13 +14,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Data start leeg
+// Standaard SHA-256 hash voor wachtwoord: "topvakantie123"
+const STANDAARD_HASH = "b46be1c02ff4b9f2913f6312a149c9528643efc62cfd3bf49557457497d51ee2";
+
 let appData = {
   deelkampen: [],
   deelnemers: [],
-  activiteiten: [],
-  keuzes: {}
+  masterActiviteiten: [],
+  kampAanbod: {}, // Structuur: { kampId: ["actId1", "actId2"] }
+  keuzes: {},
+  adminHash: STANDAARD_HASH
 };
+
+let isAdminIngelogd = false;
+
+// SHA-256 Hashing Functie
+async function hashWachtwoord(wachtwoord) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(wachtwoord);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 async function laadFirebaseData() {
   const dbRef = ref(db);
@@ -30,8 +45,10 @@ async function laadFirebaseData() {
       appData = snapshot.val();
       if (!appData.deelkampen) appData.deelkampen = [];
       if (!appData.deelnemers) appData.deelnemers = [];
-      if (!appData.activiteiten) appData.activiteiten = [];
+      if (!appData.masterActiviteiten) appData.masterActiviteiten = [];
+      if (!appData.kampAanbod) appData.kampAanbod = {};
       if (!appData.keuzes) appData.keuzes = {};
+      if (!appData.adminHash) appData.adminHash = STANDAARD_HASH;
     } else {
       await set(ref(db, 'topvakantie'), appData);
     }
@@ -45,39 +62,38 @@ async function laadFirebaseData() {
 function initApp() {
   vulDropdowns();
   updateOverzicht();
-  renderBeheerLijsten();
 }
 
 function vulDropdowns() {
   const kampSelect = document.getElementById('kampSelect');
   const overzichtSelect = document.getElementById('overzichtKampSelect');
   const nieuwDeelnemerKamp = document.getElementById('nieuwDeelnemerKamp');
-  const nieuwActKamp = document.getElementById('nieuwActKamp');
 
   kampSelect.innerHTML = '<option value="">-- Selecteer een Deelkamp --</option>';
   overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen --</option>';
   nieuwDeelnemerKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
-  nieuwActKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
 
   appData.deelkampen.forEach(kamp => {
     const opt = `<option value="${kamp.id}">${kamp.naam}</option>`;
     kampSelect.innerHTML += opt;
     overzichtSelect.innerHTML += opt;
     nieuwDeelnemerKamp.innerHTML += opt;
-    nieuwActKamp.innerHTML += opt;
   });
 }
 
+// 1. KAMP SELECTIE EN AANBOD
 window.onKampChange = function() {
   const kampId = document.getElementById('kampSelect').value;
   const container = document.getElementById('deelnemersContainer');
   const actionsBar = document.getElementById('actionsBar');
   const badge = document.getElementById('kampBadge');
+  const instellingenSectie = document.getElementById('instellingenSectie');
 
   container.innerHTML = '';
 
   if (!kampId) {
     actionsBar.style.display = 'none';
+    instellingenSectie.style.display = 'none';
     badge.textContent = 'Selecteer een kamp';
     container.innerHTML = '<div class="empty-state">Kies hierboven een deelkamp om te beginnen.</div>';
     return;
@@ -86,8 +102,54 @@ window.onKampChange = function() {
   const kamp = appData.deelkampen.find(k => k.id === kampId);
   badge.textContent = kamp ? kamp.naam : 'Selecteer een kamp';
   actionsBar.style.display = 'flex';
+  instellingenSectie.style.display = 'block';
 
+  renderAanbodCheckboxes(kampId);
+  renderDeelnemersFormulier(kampId);
+};
+
+window.toggleAanbodPaneel = function() {
+  const paneel = document.getElementById('aanbodPaneel');
+  paneel.style.display = paneel.style.display === 'none' ? 'block' : 'none';
+};
+
+function renderAanbodCheckboxes(kampId) {
+  const container = document.getElementById('aanbodCheckboxesGrid');
+  const actieveAanbod = appData.kampAanbod[kampId] || [];
+
+  if (appData.masterActiviteiten.length === 0) {
+    container.innerHTML = '<em>Er zitten nog geen activiteiten in de Master Database. Voeg ze toe via "Beheer & Data".</em>';
+    return;
+  }
+
+  container.innerHTML = appData.masterActiviteiten.map(act => {
+    const isChecked = actieveAanbod.includes(act.id) ? 'checked' : '';
+    const periodesText = act.periodes ? act.periodes.join(', ') : 'alle';
+    return `
+      <label>
+        <input type="checkbox" class="kamp-act-cb" value="${act.id}" ${isChecked}>
+        <strong>${act.naam}</strong> <small>(${periodesText})</small>
+      </label>
+    `;
+  }).join('');
+}
+
+window.opslaanAanbod = async function() {
+  const kampId = document.getElementById('kampSelect').value;
+  const geselecteerdeActIds = Array.from(document.querySelectorAll('.kamp-act-cb:checked')).map(cb => cb.value);
+
+  appData.kampAanbod[kampId] = geselecteerdeActIds;
+  await set(ref(db, `topvakantie/kampAanbod/${kampId}`), geselecteerdeActIds);
+
+  showModal("Opgeslagen", "Het activiteitenaanbod voor dit kamp is bijgewerkt.");
+  document.getElementById('aanbodPaneel').style.display = 'none';
+  renderDeelnemersFormulier(kampId);
+};
+
+function renderDeelnemersFormulier(kampId) {
+  const container = document.getElementById('deelnemersContainer');
   const deelnemers = appData.deelnemers.filter(d => d.kampId === kampId);
+  const toegestaneActIds = appData.kampAanbod[kampId] || [];
 
   if (deelnemers.length === 0) {
     container.innerHTML = '<div class="empty-state">Nog geen deelnemers in dit kamp. Voeg ze toe via "Beheer & Data".</div>';
@@ -101,13 +163,19 @@ window.onKampChange = function() {
     { id: 'avond', label: 'Avond' }
   ];
 
+  container.innerHTML = '';
+
   deelnemers.forEach(d => {
     const card = document.createElement('div');
     card.className = 'deelnemer-card';
 
     let gridHtml = '';
     periodes.forEach(p => {
-      const mogelijkeAct = appData.activiteiten.filter(a => a.kampId === kampId && a.periodes && a.periodes.includes(p.id));
+      // Filter alleen activiteiten uit de Master-lijst die gekoppeld zijn én in deze periode mogen
+      const mogelijkeAct = appData.masterActiviteiten.filter(a => 
+        toegestaneActIds.includes(a.id) && a.periodes && a.periodes.includes(p.id)
+      );
+
       const key = `${d.id}_${p.id}`;
       const geselecteerd = appData.keuzes[key] || '';
 
@@ -131,7 +199,7 @@ window.onKampChange = function() {
 
     container.appendChild(card);
   });
-};
+}
 
 window.opslaanKeuzes = async function() {
   const selects = document.querySelectorAll('select[data-deelnemer]');
@@ -150,6 +218,55 @@ window.opslaanKeuzes = async function() {
   }
 };
 
+// 2. BEHEER & WACHTWOORD
+window.verifieerWachtwoord = async function() {
+  const input = document.getElementById('adminWachtwoordInput').value;
+  const hash = await hashWachtwoord(input);
+
+  if (hash === appData.adminHash) {
+    isAdminIngelogd = true;
+    document.getElementById('loginFormCard').style.display = 'none';
+    document.getElementById('beheerInhoud').style.display = 'grid';
+    renderBeheerLijsten();
+  } else {
+    showModal("Toegang Geweigerd", "Onjuist wachtwoord.");
+  }
+};
+
+window.wijzigWachtwoord = async function() {
+  const w1 = document.getElementById('nieuwWachtwoord1').value;
+  const w2 = document.getElementById('nieuwWachtwoord2').value;
+
+  if (!w1 || w1 !== w2) return showModal("Fout", "Wachtwoorden komen niet overeen.");
+
+  const nieuweHash = await hashWachtwoord(w1);
+  appData.adminHash = nieuweHash;
+  await set(ref(db, 'topvakantie/adminHash'), nieuweHash);
+
+  document.getElementById('nieuwWachtwoord1').value = '';
+  document.getElementById('nieuwWachtwoord2').value = '';
+  showModal("Succes", "Nieuw beheerderswachtwoord opgeslagen!");
+};
+
+window.voegMasterActiviteitToe = async function() {
+  const input = document.getElementById('nieuwActNaam');
+  const naam = input.value.trim();
+  const checkedPeriodes = Array.from(document.querySelectorAll('.act-periode:checked')).map(cb => cb.value);
+
+  if (!naam || checkedPeriodes.length === 0) {
+    return showModal("Fout", "Vul de naam in en vink minstens 1 periode aan.");
+  }
+
+  const nieuw = { id: `mact-${Date.now()}`, naam: naam, periodes: checkedPeriodes };
+  appData.masterActiviteiten.push(nieuw);
+
+  await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
+  input.value = '';
+  document.querySelectorAll('.act-periode').forEach(cb => cb.checked = false);
+  renderBeheerLijsten();
+  showModal("Succes", `Activiteit "${naam}" toegevoegd aan Master Database!`);
+};
+
 window.voegKampToe = async function() {
   const input = document.getElementById('nieuwKampNaam');
   const naam = input.value.trim();
@@ -157,10 +274,11 @@ window.voegKampToe = async function() {
 
   const nieuwKamp = { id: `k-${Date.now()}`, naam: naam };
   appData.deelkampen.push(nieuwKamp);
-  
+
   await set(ref(db, 'topvakantie/deelkampen'), appData.deelkampen);
   input.value = '';
   initApp();
+  renderBeheerLijsten();
   showModal("Succes", `Kamp "${naam}" toegevoegd!`);
 };
 
@@ -177,42 +295,32 @@ window.voegDeelnemerToe = async function() {
   await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
   input.value = '';
   initApp();
-  if (document.getElementById('kampSelect').value === kampId) window.onKampChange();
+  renderBeheerLijsten();
   showModal("Succes", `Deelnemer "${naam}" toegevoegd!`);
-};
-
-window.voegActiviteitToe = async function() {
-  const input = document.getElementById('nieuwActNaam');
-  const kampId = document.getElementById('nieuwActKamp').value;
-  const naam = input.value.trim();
-
-  const checkedPeriodes = Array.from(document.querySelectorAll('.act-periode:checked')).map(cb => cb.value);
-
-  if (!naam || !kampId || checkedPeriodes.length === 0) {
-    return showModal("Fout", "Vul de naam in, kies een kamp en vink minstens 1 periode aan.");
-  }
-
-  const nieuw = { id: `a-${Date.now()}`, kampId: kampId, naam: naam, periodes: checkedPeriodes };
-  appData.activiteiten.push(nieuw);
-
-  await set(ref(db, 'topvakantie/activiteiten'), appData.activiteiten);
-  input.value = '';
-  document.querySelectorAll('.act-periode').forEach(cb => cb.checked = false);
-  initApp();
-  if (document.getElementById('kampSelect').value === kampId) window.onKampChange();
-  showModal("Succes", `Activiteit "${naam}" toegevoegd!`);
 };
 
 function renderBeheerLijsten() {
   const container = document.getElementById('beheerLijstContainer');
   let html = `
-    <h4>Overzicht Deelkampen (${appData.deelkampen.length})</h4>
+    <h4>Master Activiteiten Bibliotheek (${appData.masterActiviteiten.length})</h4>
+    <table class="admin-table">
+      <tr><th>Activiteit</th><th>Periodes</th><th>Actie</th></tr>
+      ${appData.masterActiviteiten.map(a => `
+        <tr>
+          <td>${a.naam}</td>
+          <td>${a.periodes ? a.periodes.join(', ') : ''}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="verwijderMasterAct('${a.id}')">Wissen</button></td>
+        </tr>
+      `).join('')}
+    </table>
+
+    <h4 class="margin-top">Deelkampen (${appData.deelkampen.length})</h4>
     <table class="admin-table">
       <tr><th>Kampnaam</th><th>Actie</th></tr>
       ${appData.deelkampen.map(k => `
         <tr>
           <td>${k.naam}</td>
-          <td><button class="btn btn-danger btn-sm" onclick="verwijderKamp('${k.id}')">Verwijderen</button></td>
+          <td><button class="btn btn-danger btn-sm" onclick="verwijderKamp('${k.id}')">Wissen</button></td>
         </tr>
       `).join('')}
     </table>
@@ -220,11 +328,56 @@ function renderBeheerLijsten() {
   container.innerHTML = html;
 }
 
+window.verwijderMasterAct = async function(id) {
+  appData.masterActiviteiten = appData.masterActiviteiten.filter(a => a.id !== id);
+  await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
+  renderBeheerLijsten();
+};
+
 window.verwijderKamp = async function(id) {
   appData.deelkampen = appData.deelkampen.filter(k => k.id !== id);
   await set(ref(db, 'topvakantie/deelkampen'), appData.deelkampen);
   initApp();
-  window.onKampChange();
+  renderBeheerLijsten();
+};
+
+// 3. OVERZICHT & EXPORT
+window.updateOverzicht = function() {
+  const filterKamp = document.getElementById('overzichtKampSelect').value;
+  const container = document.getElementById('overzichtContainer');
+  container.innerHTML = '';
+
+  const gefilterdeAct = appData.masterActiviteiten;
+
+  if (gefilterdeAct && gefilterdeAct.length > 0) {
+    gefilterdeAct.forEach(act => {
+      const ingeschreven = [];
+      appData.deelnemers.forEach(d => {
+        if (!filterKamp || d.kampId === filterKamp) {
+          ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
+            if (appData.keuzes[`${d.id}_${p}`] === act.id) {
+              ingeschreven.push(`${d.naam} (${p})`);
+            }
+          });
+        }
+      });
+
+      if (ingeschreven.length > 0) {
+        const card = document.createElement('div');
+        card.className = 'overzicht-card';
+        card.innerHTML = `
+          <h3>${act.naam}</h3>
+          <p><strong>Aantal inschrijvingen:</strong> ${ingeschreven.length}</p>
+          <div class="deelnemers-tags">
+            ${ingeschreven.map(n => `<span class="tag">${n}</span>`).join('')}
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    });
+  } else {
+    container.innerHTML = '<div class="empty-state">Geen inschrijvingen gevonden.</div>';
+  }
 };
 
 window.exportCSV = function() {
@@ -233,7 +386,7 @@ window.exportCSV = function() {
     const kamp = appData.deelkampen.find(k => k.id === d.kampId);
     const getActNaam = (p) => {
       const actId = appData.keuzes[`${d.id}_${p}`];
-      const act = appData.activiteiten.find(a => a.id === actId);
+      const act = appData.masterActiviteiten.find(a => a.id === actId);
       return act ? `"${act.naam}"` : 'Geen';
     };
     csv += `"${d.naam}","${kamp ? kamp.naam : ''}",${getActNaam('voormiddag')},${getActNaam('namiddag1')},${getActNaam('namiddag2')},${getActNaam('avond')}\n`;
@@ -246,48 +399,10 @@ window.exportCSV = function() {
   link.click();
 };
 
-window.updateOverzicht = function() {
-  const filterKamp = document.getElementById('overzichtKampSelect').value;
-  const container = document.getElementById('overzichtContainer');
-  container.innerHTML = '';
-
-  const gefilterdeAct = filterKamp 
-    ? appData.activiteiten.filter(a => a.kampId === filterKamp)
-    : appData.activiteiten;
-
-  if (gefilterdeAct && gefilterdeAct.length > 0) {
-    gefilterdeAct.forEach(act => {
-      const ingeschreven = [];
-      appData.deelnemers.forEach(d => {
-        ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-          if (appData.keuzes[`${d.id}_${p}`] === act.id) {
-            ingeschreven.push(`${d.naam} (${p})`);
-          }
-        });
-      });
-
-      const card = document.createElement('div');
-      card.className = 'overzicht-card';
-      card.innerHTML = `
-        <h3>${act.naam}</h3>
-        <p><strong>Aantal inschrijvingen:</strong> ${ingeschreven.length}</p>
-        <div class="deelnemers-tags">
-          ${ingeschreven.length > 0 
-            ? ingeschreven.map(n => `<span class="tag">${n}</span>`).join('') 
-            : '<em>Nog geen inschrijvingen</em>'}
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  } else {
-    container.innerHTML = '<div class="empty-state">Geen activiteiten gevonden.</div>';
-  }
-};
-
 window.openTab = function(tabName) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  
+
   document.getElementById(`tab-${tabName}`).classList.add('active');
   event.currentTarget.classList.add('active');
 };
