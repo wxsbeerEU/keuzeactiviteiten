@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <!-- VOORTGANG EN ZOEKBALK (ZICHTBAAR BIJ KAMPSELECTIE) -->
+    <!-- VOORTGANG EN ZOEKBALK -->
     <div id="selectieHeader" style="display:none;" class="margin-bottom">
       <div class="progress-card">
         <div class="progress-info">
@@ -56,6 +56,7 @@
 
     <div class="actions-bar" id="actionsBar">
       <button class="btn btn-primary" onclick="opslaanKeuzes()">💾 Keuzes Opslaan</button>
+      <button class="btn btn-danger" onclick="resetKeuzesVanKamp()">🔄 Reset Keuzes Van Dit Kamp</button>
       <button class="btn btn-secondary" onclick="exportCSV()">📊 Export Excel (CSV)</button>
       <button class="btn btn-secondary" onclick="window.print()">🖨️ Afdrukken</button>
     </div>
@@ -169,6 +170,13 @@
           <input type="text" id="nieuwActNaam" placeholder="bijv. Archery Tag, Vlotten Bouwen...">
         </div>
         <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Master-Database</button>
+      </div>
+
+      <!-- ALGEMENE DATA RESETS -->
+      <div class="admin-card full-width">
+        <h3>Database Resets</h3>
+        <p class="help-text">Wilt u alle keuzes van de deelnemers van alle kampen in één keer wissen voor een nieuwe dag?</p>
+        <button class="btn btn-danger" onclick="resetAlleKeuzesGlobal()">⚠️ Wis Alle Keuzes Van Alle Kampen</button>
       </div>
 
       <!-- WACHTWOORD WIJZIGEN -->
