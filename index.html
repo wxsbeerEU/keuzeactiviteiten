@@ -15,7 +15,7 @@
       <p>Selectie- en beheersysteem voor kampactiviteiten</p>
     </div>
     <div class="header-badges">
-      <span class="badge" id="kampBadge">Geen kampen geselecteerd</span>
+      <span class="badge" id="kampBadge">Selecteer een kamp</span>
     </div>
   </header>
 
@@ -25,49 +25,18 @@
     <button class="tab-btn" onclick="openTab('beheer')">Beheer & Data 🔒</button>
   </nav>
 
-  <!-- TAB 1: KEUZES INVOEREN PER DEELNEMER -->
+  <!-- TAB 1: KEUZES INVOEREN (VOOR DEELNEMERS) -->
   <div id="tab-selectie" class="tab-content active">
     
-    <!-- MULTI KAMP SELECTIE -->
-    <div class="kamp-selector-card flex-column align-start">
-      <label><strong>Selecteer Deelkampen (meerdere mogelijk):</strong></label>
-      <div id="kampCheckboxesGrid" class="checkbox-matrix margin-top-sm"></div>
-    </div>
-
-    <!-- AANBOD AANPASSEN PER PERIODE VOOR DEZE KAMPEN -->
-    <div id="instellingenSectie" style="display:none;" class="admin-card margin-bottom">
-      <div class="flex-between">
-        <h3>1. Activiteitenaanbod & Max. Capaciteit voor geselecteerde kamp(en)</h3>
-        <button class="btn btn-secondary btn-sm" onclick="toggleAanbodPaneel()">Aanbod Openen / Sluiten</button>
-      </div>
-      
-      <div id="aanbodPaneel" style="display:none; margin-top: 15px;">
-        <p class="help-text">Vink aan welke activiteiten beschikbaar zijn en stel optioneel een maximaal aantal deelnemers in (0 = onbeperkt):</p>
-        
-        <div class="periodes-aanbod-grid">
-          <div class="periode-aanbod-box">
-            <h4 class="periode-title">Voormiddag</h4>
-            <div id="aanbod-voormiddag" class="checkbox-list"></div>
-          </div>
-          <div class="periode-aanbod-box">
-            <h4 class="periode-title">Namiddag 1</h4>
-            <div id="aanbod-namiddag1" class="checkbox-list"></div>
-          </div>
-          <div class="periode-aanbod-box">
-            <h4 class="periode-title">Namiddag 2</h4>
-            <div id="aanbod-namiddag2" class="checkbox-list"></div>
-          </div>
-          <div class="periode-aanbod-box">
-            <h4 class="periode-title">Avond</h4>
-            <div id="aanbod-avond" class="checkbox-list"></div>
-          </div>
-        </div>
-
-        <button class="btn btn-primary margin-top" onclick="opslaanAanbodMulti()">Aanbod Opslaan Voor Deze Kampen</button>
+    <div class="kamp-selector-card">
+      <div class="form-group flex-grow">
+        <label for="kampSelect"><strong>Kies het Deelkamp:</strong></label>
+        <select id="kampSelect" onchange="onKampChange()">
+          <option value="">-- Selecteer een Deelkamp --</option>
+        </select>
       </div>
     </div>
 
-    <!-- SECTIE DEELNEMERS INSCHRIJVEN -->
     <div class="actions-bar" id="actionsBar">
       <button class="btn btn-primary" onclick="opslaanKeuzes()">Keuzes Opslaan</button>
       <button class="btn btn-secondary" onclick="exportCSV()">Export Excel (CSV)</button>
@@ -76,7 +45,7 @@
 
     <div id="deelnemersContainer">
       <div class="empty-state">
-        Vink hierboven één of meerdere deelkampen aan om de deelnemers te beheren.
+        Kies hierboven een deelkamp om de deelnemers en hun keuzes te beheren.
       </div>
     </div>
   </div>
@@ -112,9 +81,42 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
-      <!-- KAMP TOEVOEGEN -->
+      <!-- 1. ACTIVITEITENAANBOD & CAPACITEIT PERIODE (VOOR ÉÉN OF MEERDERE KAMPEN) -->
+      <div class="admin-card full-width">
+        <h3>1. Activiteitenaanbod & Max. Capaciteit Instellen</h3>
+        <p class="help-text">Vink aan welke deelkampen deze activiteiten samen doen, selecteer per tijdsstip de activiteiten en stel optioneel een max. aantal deelnemers in (0 = onbeperkt):</p>
+
+        <div class="form-group margin-top-sm">
+          <label><strong>Selecteer Deelkamp(en) voor dit aanbod:</strong></label>
+          <div id="beheerKampCheckboxesGrid" class="checkbox-matrix margin-top-sm"></div>
+        </div>
+
+        <div id="beheerAanbodPanel" style="display:none;" class="margin-top">
+          <div class="periodes-aanbod-grid">
+            <div class="periode-aanbod-box">
+              <h4 class="periode-title">Voormiddag</h4>
+              <div id="beheer-aanbod-voormiddag" class="checkbox-list"></div>
+            </div>
+            <div class="periode-aanbod-box">
+              <h4 class="periode-title">Namiddag 1</h4>
+              <div id="beheer-aanbod-namiddag1" class="checkbox-list"></div>
+            </div>
+            <div class="periode-aanbod-box">
+              <h4 class="periode-title">Namiddag 2</h4>
+              <div id="beheer-aanbod-namiddag2" class="checkbox-list"></div>
+            </div>
+            <div class="periode-aanbod-box">
+              <h4 class="periode-title">Avond</h4>
+              <div id="beheer-aanbod-avond" class="checkbox-list"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary margin-top" onclick="opslaanBeheerAanbodMulti()">Aanbod Opslaan Voor Geselecteerde Kampen</button>
+        </div>
+      </div>
+
+      <!-- 2. KAMP TOEVOEGEN -->
       <div class="admin-card">
-        <h3>1. Nieuw Deelkamp</h3>
+        <h3>2. Nieuw Deelkamp</h3>
         <div class="form-group">
           <label>Naam Kamp:</label>
           <input type="text" id="nieuwKampNaam" placeholder="bijv. Surfen of Gaming">
@@ -122,9 +124,9 @@
         <button class="btn btn-primary" onclick="voegKampToe()">Kamp Toevoegen</button>
       </div>
 
-      <!-- DEELNEMER TOEVOEGEN -->
+      <!-- 3. DEELNEMER TOEVOEGEN -->
       <div class="admin-card">
-        <h3>2. Nieuwe Deelnemer</h3>
+        <h3>3. Nieuwe Deelnemer</h3>
         <div class="form-group">
           <label>Naam Deelnemer:</label>
           <input type="text" id="nieuwDeelnemerNaam" placeholder="bijv. Lucas De Smet">
@@ -136,9 +138,9 @@
         <button class="btn btn-primary" onclick="voegDeelnemerToe()">Deelnemer Toevoegen</button>
       </div>
 
-      <!-- MASTER ACTIVITEIT TOEVOEGEN -->
+      <!-- 4. MASTER ACTIVITEIT TOEVOEGEN -->
       <div class="admin-card full-width">
-        <h3>3. Totale Activiteiten Database (Master-Lijst)</h3>
+        <h3>4. Totale Activiteiten Database (Master-Lijst)</h3>
         <div class="form-group">
           <label>Naam Activiteit:</label>
           <input type="text" id="nieuwActNaam" placeholder="bijv. Archery Tag, Vlotten Bouwen...">
