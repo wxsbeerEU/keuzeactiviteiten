@@ -78,10 +78,11 @@ header {
   border-radius: 12px;
   border: 1px solid var(--border);
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.flex-column { flex-direction: column; }
-.align-start { align-items: flex-start; }
 .flex-grow { flex-grow: 1; }
 .margin-top-sm { margin-top: 8px; }
 
@@ -126,28 +127,13 @@ select:focus, input:focus {
   border: 1px solid var(--border);
 }
 
-.deelnemer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #f0f4ec;
-  padding-bottom: 10px;
-}
-
 .deelnemer-naam {
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--secondary);
-}
-
-.kamp-tag-small {
-  background: #e2e8f0;
-  color: #475569;
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 12px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #f0f4ec;
+  padding-bottom: 10px;
 }
 
 .periodes-grid {
@@ -203,13 +189,12 @@ select:focus, input:focus {
   border: 1px solid #cce2b5;
 }
 
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
 .margin-bottom { margin-bottom: 20px; }
 .margin-top { margin-top: 15px; }
 .help-text { font-size: 0.9rem; color: #64748b; margin-top: -5px; }
 .max-width-center { max-width: 450px; margin: 40px auto; }
 
-/* Matrix checkboxes voor kampselectie */
+/* Matrix checkboxes voor beheer */
 .checkbox-matrix {
   display: flex;
   flex-wrap: wrap;
