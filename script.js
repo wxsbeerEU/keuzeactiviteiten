@@ -138,13 +138,11 @@ function renderDeelnemersFormulier(kampId) {
   const kampAanbod = appData.periodeAanbod[kampId] || {};
   const huidigeAantallen = berekenAantallen(kampId);
 
-  // Filteren op zoekbalk
   const zoekTerm = document.getElementById('deelnemerZoekInput')?.value.toLowerCase().trim() || '';
   if (zoekTerm) {
     deelnemers = deelnemers.filter(d => d.naam.toLowerCase().includes(zoekTerm));
   }
 
-  // Voortgang berekenen
   updateVoortgangsBalk(kampId);
 
   if (deelnemers.length === 0) {
@@ -268,6 +266,34 @@ window.opslaanKeuzes = async function() {
   }
 };
 
+// RESET KEUZES VAN HET HUIDIGE KAMP
+window.resetKeuzesVanKamp = async function() {
+  const kampId = document.getElementById('kampSelect').value;
+  if (!kampId) return;
+
+  const kamp = appData.deelkampen.find(k => k.id === kampId);
+  const bevestig = confirm(`Weet je zeker dat je alle gekozen activiteiten voor het kamp "${kamp ? kamp.naam : ''}" wilt resetten/wissen?`);
+
+  if (bevestig) {
+    const deelnemersInKamp = appData.deelnemers.filter(d => d.kampId === kampId);
+    
+    deelnemersInKamp.forEach(d => {
+      ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
+        delete appData.keuzes[`${d.id}_${p}`];
+      });
+    });
+
+    try {
+      await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
+      renderDeelnemersFormulier(kampId);
+      updateOverzicht();
+      showModal("Reset Voltooid", `Alle keuzes voor "${kamp ? kamp.naam : ''}" zijn gewist.`);
+    } catch (err) {
+      showModal("Fout", "Kon keuzes niet resetten in Firebase.");
+    }
+  }
+};
+
 // 2. BEHEER: CHECKBOXES AANBOD MULTI-KAMP
 function renderBeheerKampCheckboxes() {
   const grid = document.getElementById('beheerKampCheckboxesGrid');
@@ -370,6 +396,19 @@ window.opslaanBeheerAanbodMulti = async function() {
   const huidigGeselecteerdKamp = document.getElementById('kampSelect').value;
   if (huidigGeselecteerdKamp && geselecteerdeKampIds.includes(huidigGeselecteerdKamp)) {
     renderDeelnemersFormulier(huidigGeselecteerdKamp);
+  }
+};
+
+window.resetAlleKeuzesGlobal = async function() {
+  const bevestig = confirm("WEET JE ZEKER dat je ALLE keuzes van ALLE kampen wilt wissen?");
+  if (bevestig) {
+    appData.keuzes = {};
+    await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
+    
+    const huidigKamp = document.getElementById('kampSelect').value;
+    if (huidigKamp) renderDeelnemersFormulier(huidigKamp);
+    updateOverzicht();
+    showModal("Reset Voltooid", "Alle keuzes van de hele database zijn gewist.");
   }
 };
 
