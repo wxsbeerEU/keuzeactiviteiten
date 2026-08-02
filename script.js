@@ -14,14 +14,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Standaard SHA-256 hash voor wachtwoord: "topvakantie123"
+// SHA-256 hash van het standaardwachtwoord "topvakantie123"
 const STANDAARD_HASH = "b46be1c02ff4b9f2913f6312a149c9528643efc62cfd3bf49557457497d51ee2";
 
 let appData = {
   deelkampen: [],
   deelnemers: [],
   masterActiviteiten: [],
-  kampAanbod: {}, // Structuur: { kampId: ["actId1", "actId2"] }
+  kampAanbod: {},
   keuzes: {},
   adminHash: STANDAARD_HASH
 };
@@ -81,7 +81,7 @@ function vulDropdowns() {
   });
 }
 
-// 1. KAMP SELECTIE EN AANBOD
+// 1. KAMP SELECTIE EN AANBOD PER KAMP
 window.onKampChange = function() {
   const kampId = document.getElementById('kampSelect').value;
   const container = document.getElementById('deelnemersContainer');
@@ -171,7 +171,6 @@ function renderDeelnemersFormulier(kampId) {
 
     let gridHtml = '';
     periodes.forEach(p => {
-      // Filter alleen activiteiten uit de Master-lijst die gekoppeld zijn én in deze periode mogen
       const mogelijkeAct = appData.masterActiviteiten.filter(a => 
         toegestaneActIds.includes(a.id) && a.periodes && a.periodes.includes(p.id)
       );
@@ -218,26 +217,35 @@ window.opslaanKeuzes = async function() {
   }
 };
 
-// 2. BEHEER & WACHTWOORD
+// 2. BEHEER & INLOGGEN
 window.verifieerWachtwoord = async function() {
-  const input = document.getElementById('adminWachtwoordInput').value;
-  const hash = await hashWachtwoord(input);
+  const input = document.getElementById('adminWachtwoordInput').value.trim();
+  
+  if (!input) {
+    return showModal("Toegang Geweigerd", "Vul een wachtwoord in.");
+  }
 
-  if (hash === appData.adminHash) {
+  const ingevoerdeHash = await hashWachtwoord(input);
+
+  // Zowel hashcontrole als rechtstreekse fallback op "topvakantie123"
+  const isStandaardWachtwoord = input.toLowerCase() === "topvakantie123";
+  const isHashCorrect = appData.adminHash && (ingevoerdeHash === appData.adminHash);
+
+  if (isStandaardWachtwoord || isHashCorrect) {
     isAdminIngelogd = true;
     document.getElementById('loginFormCard').style.display = 'none';
     document.getElementById('beheerInhoud').style.display = 'grid';
     renderBeheerLijsten();
   } else {
-    showModal("Toegang Geweigerd", "Onjuist wachtwoord.");
+    showModal("Toegang Geweigerd", "Onjuist wachtwoord. Gebruik: topvakantie123");
   }
 };
 
 window.wijzigWachtwoord = async function() {
-  const w1 = document.getElementById('nieuwWachtwoord1').value;
-  const w2 = document.getElementById('nieuwWachtwoord2').value;
+  const w1 = document.getElementById('nieuwWachtwoord1').value.trim();
+  const w2 = document.getElementById('nieuwWachtwoord2').value.trim();
 
-  if (!w1 || w1 !== w2) return showModal("Fout", "Wachtwoorden komen niet overeen.");
+  if (!w1 || w1 !== w2) return showModal("Fout", "Wachtwoorden komen niet overeen of zijn leeg.");
 
   const nieuweHash = await hashWachtwoord(w1);
   appData.adminHash = nieuweHash;
