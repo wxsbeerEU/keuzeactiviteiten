@@ -25,7 +25,7 @@
     <button class="tab-btn" onclick="openTab('beheer')">Beheer & Data 🔒</button>
   </nav>
 
-  <!-- TAB 1: KEUZES INVOEREN (VOOR DEELNEMERS) -->
+  <!-- TAB 1: KEUZES INVOEREN (VOOR DEELNEMERS/LEIDING) -->
   <div id="tab-selectie" class="tab-content active">
     
     <div class="kamp-selector-card">
@@ -37,10 +37,27 @@
       </div>
     </div>
 
+    <!-- VOORTGANG EN ZOEKBALK (ZICHTBAAR BIJ KAMPSELECTIE) -->
+    <div id="selectieHeader" style="display:none;" class="margin-bottom">
+      <div class="progress-card">
+        <div class="progress-info">
+          <span><strong>Voortgang inschrijvingen:</strong></span>
+          <span id="progressText">0 / 0 keuzes ingevuld (0%)</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="search-bar-card">
+        <input type="text" id="deelnemerZoekInput" placeholder="🔍 Zoek deelnemer op naam..." oninput="filterDeelnemersLijst()">
+      </div>
+    </div>
+
     <div class="actions-bar" id="actionsBar">
-      <button class="btn btn-primary" onclick="opslaanKeuzes()">Keuzes Opslaan</button>
-      <button class="btn btn-secondary" onclick="exportCSV()">Export Excel (CSV)</button>
-      <button class="btn btn-secondary" onclick="window.print()">Afdrukken</button>
+      <button class="btn btn-primary" onclick="opslaanKeuzes()">💾 Keuzes Opslaan</button>
+      <button class="btn btn-secondary" onclick="exportCSV()">📊 Export Excel (CSV)</button>
+      <button class="btn btn-secondary" onclick="window.print()">🖨️ Afdrukken</button>
     </div>
 
     <div id="deelnemersContainer">
@@ -81,13 +98,19 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
-      <!-- 1. ACTIVITEITENAANBOD & CAPACITEIT PERIODE (VOOR ÉÉN OF MEERDERE KAMPEN) -->
+      <!-- 1. ACTIVITEITENAANBOD & CAPACITEIT PERIODE -->
       <div class="admin-card full-width">
         <h3>1. Activiteitenaanbod & Max. Capaciteit Instellen</h3>
         <p class="help-text">Vink aan welke deelkampen deze activiteiten samen doen, selecteer per tijdsstip de activiteiten en stel optioneel een max. aantal deelnemers in (0 = onbeperkt):</p>
 
         <div class="form-group margin-top-sm">
-          <label><strong>Selecteer Deelkamp(en) voor dit aanbod:</strong></label>
+          <div class="flex-between">
+            <label><strong>Selecteer Deelkamp(en) voor dit aanbod:</strong></label>
+            <div>
+              <button class="btn btn-secondary btn-sm" onclick="selecteerAlleBeheerKampen(true)">Alles Selecteren</button>
+              <button class="btn btn-secondary btn-sm" onclick="selecteerAlleBeheerKampen(false)">Wis Selectie</button>
+            </div>
+          </div>
           <div id="beheerKampCheckboxesGrid" class="checkbox-matrix margin-top-sm"></div>
         </div>
 
