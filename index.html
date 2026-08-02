@@ -15,7 +15,7 @@
       <p>Selectie- en beheersysteem voor kampactiviteiten</p>
     </div>
     <div class="header-badges">
-      <span class="badge" id="kampBadge">Selecteer een kamp</span>
+      <span class="badge" id="kampBadge">Geen kampen geselecteerd</span>
     </div>
   </header>
 
@@ -27,13 +27,9 @@
 
   <!-- TAB 1: KEUZES INVOEREN PER DEELNEMER -->
   <div id="tab-selectie" class="tab-content active">
-    <div class="kamp-selector-card">
-      <div class="form-group flex-grow">
-        <label for="kampSelect"><strong>Kies het Deelkamp:</strong></label>
-        <select id="kampSelect" onchange="onKampChange()">
-          <option value="">-- Selecteer een Deelkamp --</option>
-        </select>
-      </div>
+    <div class="kamp-selector-card flex-column align-start">
+      <label><strong>Selecteer Deelkampen (meerdere mogelijk):</strong></label>
+      <div id="kampCheckboxesGrid" class="checkbox-matrix margin-top-sm"></div>
     </div>
 
     <div class="actions-bar" id="actionsBar">
@@ -44,7 +40,7 @@
 
     <div id="deelnemersContainer">
       <div class="empty-state">
-        Kies hierboven een deelkamp om de keuzes te beheren.
+        Vink hierboven één of meerdere deelkampen aan om de deelnemers te beheren.
       </div>
     </div>
   </div>
