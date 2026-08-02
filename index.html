@@ -27,7 +27,6 @@
 
   <!-- TAB 1: KEUZES INVOEREN PER DEELNEMER -->
   <div id="tab-selectie" class="tab-content active">
-    
     <div class="kamp-selector-card">
       <div class="form-group flex-grow">
         <label for="kampSelect"><strong>Kies het Deelkamp:</strong></label>
@@ -37,40 +36,6 @@
       </div>
     </div>
 
-    <!-- SECTIE 1: AANBOD AANPASSEN PER PERIODE -->
-    <div id="instellingenSectie" style="display:none;" class="admin-card margin-bottom">
-      <div class="flex-between">
-        <h3>1. Selecteer welke activiteiten er mogelijk zijn per periode</h3>
-        <button class="btn btn-secondary btn-sm" onclick="toggleAanbodPaneel()">Aanbod Openen / Sluiten</button>
-      </div>
-      
-      <div id="aanbodPaneel" style="display:none; margin-top: 15px;">
-        <p class="help-text">Vink aan welke activiteiten uit de Master Database beschikbaar zijn per periode voor dit kamp:</p>
-        
-        <div class="periodes-aanbod-grid">
-          <div class="periode-aanbod-box">
-            <h4 class="periode-title">Voormiddag</h4>
-            <div id="aanbod-voormiddag" class="checkbox-list"></div>
-          </div>
-          <div class="periode-aanbod-box">
-            <h4 class="periode-title">Namiddag 1</h4>
-            <div id="aanbod-namiddag1" class="checkbox-list"></div>
-          </div>
-          <div class="periode-aanbod-box">
-            <h4 class="periode-title">Namiddag 2</h4>
-            <div id="aanbod-namiddag2" class="checkbox-list"></div>
-          </div>
-          <div class="periode-aanbod-box">
-            <h4 class="periode-title">Avond</h4>
-            <div id="aanbod-avond" class="checkbox-list"></div>
-          </div>
-        </div>
-
-        <button class="btn btn-primary margin-top" onclick="opslaanAanbod()">Aanbod Opslaan</button>
-      </div>
-    </div>
-
-    <!-- SECTIE 2: DEELNEMERS INSCHRIJVEN -->
     <div class="actions-bar" id="actionsBar">
       <button class="btn btn-primary" onclick="opslaanKeuzes()">Keuzes Opslaan</button>
       <button class="btn btn-secondary" onclick="exportCSV()">Export Excel (CSV)</button>
@@ -104,7 +69,7 @@
     <!-- WACHTWOORD FORMULIER -->
     <div id="loginFormCard" class="admin-card max-width-center">
       <h3>Beheer Beveiligd 🔒</h3>
-      <p>Voer het beheerderswachtwoord in om toegang te krijgen tot de masterdatabase.</p>
+      <p>Voer het beheerderswachtwoord in om toegang te krijgen tot het beheer.</p>
       <div class="form-group">
         <label>Wachtwoord:</label>
         <input type="password" id="adminWachtwoordInput" placeholder="Voer wachtwoord in">
@@ -115,9 +80,44 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
+      <!-- AANBOD PER PERIODE INSTELLEN & MAX AANTAL -->
+      <div class="admin-card full-width">
+        <h3>1. Activiteitenaanbod & Max. Deelnemers Per Periode</h3>
+        <p class="help-text">Selecteer een kamp om de beschikbare activiteiten en hun maximale capaciteit per dagdeel in te stellen.</p>
+
+        <div class="form-group max-width-300">
+          <label for="beheerKampSelect"><strong>Selecteer Kamp:</strong></label>
+          <select id="beheerKampSelect" onchange="renderBeheerAanbodGrid()">
+            <option value="">-- Kies Kamp --</option>
+          </select>
+        </div>
+
+        <div id="beheerAanbodContainer" style="display:none;" class="margin-top">
+          <div class="periodes-aanbod-grid">
+            <div class="periode-aanbod-box">
+              <h4 class="periode-title">Voormiddag</h4>
+              <div id="beheer-aanbod-voormiddag" class="checkbox-list"></div>
+            </div>
+            <div class="periode-aanbod-box">
+              <h4 class="periode-title">Namiddag 1</h4>
+              <div id="beheer-aanbod-namiddag1" class="checkbox-list"></div>
+            </div>
+            <div class="periode-aanbod-box">
+              <h4 class="periode-title">Namiddag 2</h4>
+              <div id="beheer-aanbod-namiddag2" class="checkbox-list"></div>
+            </div>
+            <div class="periode-aanbod-box">
+              <h4 class="periode-title">Avond</h4>
+              <div id="beheer-aanbod-avond" class="checkbox-list"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary margin-top" onclick="opslaanBeheerAanbod()">Instellingen Opslaan</button>
+        </div>
+      </div>
+
       <!-- KAMP TOEVOEGEN -->
       <div class="admin-card">
-        <h3>1. Nieuw Deelkamp</h3>
+        <h3>2. Nieuw Deelkamp</h3>
         <div class="form-group">
           <label>Naam Kamp:</label>
           <input type="text" id="nieuwKampNaam" placeholder="bijv. Surfen of Gaming">
@@ -127,7 +127,7 @@
 
       <!-- DEELNEMER TOEVOEGEN -->
       <div class="admin-card">
-        <h3>2. Nieuwe Deelnemer</h3>
+        <h3>3. Nieuwe Deelnemer</h3>
         <div class="form-group">
           <label>Naam Deelnemer:</label>
           <input type="text" id="nieuwDeelnemerNaam" placeholder="bijv. Lucas De Smet">
@@ -141,8 +141,7 @@
 
       <!-- MASTER ACTIVITEIT TOEVOEGEN -->
       <div class="admin-card full-width">
-        <h3>3. Totale Activiteiten Database (Master-Lijst)</h3>
-        <p class="help-text">Voeg hier nieuwe activiteiten toe aan de centrale database.</p>
+        <h3>4. Totale Activiteiten Database (Master-Lijst)</h3>
         <div class="form-group">
           <label>Naam Activiteit:</label>
           <input type="text" id="nieuwActNaam" placeholder="bijv. Archery Tag, Vlotten Bouwen...">
