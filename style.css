@@ -1,10 +1,13 @@
 :root {
-  --primary: #e65100;
-  --primary-hover: #ef6c00;
-  --bg: #f4f6f8;
+  /* Kleurenpalet op basis van het Topvakantie logo */
+  --primary: #70b22a;          /* Topvakantie Appelgroen */
+  --primary-hover: #5d9622;    /* Donkerder groen voor hover */
+  --secondary: #004b87;        /* Topvakantie Blauw (van het uitroepteken) */
+  --secondary-hover: #003663;  /* Donkerder blauw voor hover */
+  --bg: #f4f7f2;               /* Zachte, frisse lichtgrijze/groene achtergrond */
   --card-bg: #ffffff;
-  --text: #2c3e50;
-  --border: #e2e8f0;
+  --text: #1a2530;
+  --border: #dbe4d5;
   --success: #2e7d32;
   --danger: #c62828;
 }
@@ -26,35 +29,43 @@ body {
   margin: 0 auto;
 }
 
+/* Header in de stijl van het Topvakantie logo */
 header {
-  background: linear-gradient(135deg, #e65100 0%, #ff8f00 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #8bc53f 100%);
   color: white;
   padding: 24px;
-  border-radius: 12px;
+  border-radius: 14px;
   margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(230, 81, 0, 0.15);
+  box-shadow: 0 4px 14px rgba(112, 178, 42, 0.25);
 }
 
 .header-title h1 {
   margin: 0 0 5px 0;
-  font-size: 1.8rem;
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .header-title p {
   margin: 0;
-  opacity: 0.9;
+  opacity: 0.95;
   font-size: 0.95rem;
+  font-weight: 500;
 }
 
+/* Blauwe badge (geïnspireerd door het uitroepteken) */
 .badge {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 8px 16px;
+  background: var(--secondary);
+  color: white;
+  padding: 8px 18px;
   border-radius: 20px;
   font-weight: bold;
   font-size: 0.9rem;
+  box-shadow: 0 2px 6px rgba(0, 75, 135, 0.2);
 }
 
 /* Navigatie Tabs */
@@ -62,30 +73,30 @@ header {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
-  border-bottom: 2px solid var(--border);
+  border-bottom: 3px solid var(--border);
   padding-bottom: 2px;
 }
 
 .tab-btn {
   background: transparent;
   border: none;
-  padding: 12px 20px;
+  padding: 12px 22px;
   font-size: 1rem;
-  font-weight: 600;
-  color: #64748b;
+  font-weight: 700;
+  color: #556b2f;
   cursor: pointer;
   border-radius: 8px 8px 0 0;
   transition: all 0.2s;
 }
 
 .tab-btn:hover {
-  color: var(--primary);
-  background: rgba(230, 81, 0, 0.05);
+  color: var(--secondary);
+  background: rgba(112, 178, 42, 0.1);
 }
 
 .tab-btn.active {
-  color: var(--primary);
-  border-bottom: 3px solid var(--primary);
+  color: var(--secondary);
+  border-bottom: 4px solid var(--primary);
   background: white;
 }
 
@@ -97,75 +108,103 @@ header {
   display: block;
 }
 
-/* Selector Card */
+/* Selector Cards */
 .kamp-selector-card {
   background: var(--card-bg);
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.kamp-selector-card label {
+  color: var(--secondary);
 }
 
 select, input {
   padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
   font-size: 0.95rem;
   outline: none;
+  transition: border-color 0.2s;
 }
 
 select:focus, input:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(112, 178, 42, 0.15);
 }
 
 .kamp-selector-card select {
   min-width: 300px;
 }
 
-/* Actiebalk */
+/* Actiebalk & Knoppen */
 .actions-bar {
   display: none;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
 .btn {
-  padding: 10px 18px;
+  padding: 11px 20px;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: var(--primary-hover); }
+.btn-primary { 
+  background: var(--primary); 
+  color: white; 
+}
 
-.btn-secondary { background: #64748b; color: white; }
-.btn-secondary:hover { background: #475569; }
+.btn-primary:hover { 
+  background: var(--primary-hover); 
+  box-shadow: 0 3px 8px rgba(112, 178, 42, 0.3);
+}
 
-.btn-danger { background: var(--danger); color: white; }
-.btn-danger:hover { background: #b71c1c; }
+.btn-secondary { 
+  background: var(--secondary); 
+  color: white; 
+}
+
+.btn-secondary:hover { 
+  background: var(--secondary-hover); 
+  box-shadow: 0 3px 8px rgba(0, 75, 135, 0.3);
+}
+
+.btn-danger { 
+  background: var(--danger); 
+  color: white; 
+}
+
+.btn-danger:hover { 
+  background: #b71c1c; 
+}
 
 /* Deelnemer Kaarten */
 .deelnemer-card {
   background: var(--card-bg);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 20px;
   margin-bottom: 16px;
   border: 1px solid var(--border);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
 .deelnemer-naam {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--secondary);
   margin-bottom: 15px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid #f0f4ec;
   padding-bottom: 10px;
 }
 
@@ -176,23 +215,25 @@ select:focus, input:focus {
 }
 
 .periode-box {
-  background: #f8fafc;
+  background: #f8faf6;
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e3ebe0;
 }
 
 .periode-title {
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--primary);
   margin-bottom: 8px;
+  letter-spacing: 0.5px;
 }
 
 .periode-box select {
   width: 100%;
   font-size: 0.88rem;
+  border-color: #d0ded0;
 }
 
 /* Empty State */
@@ -200,23 +241,26 @@ select:focus, input:focus {
   text-align: center;
   padding: 40px;
   background: white;
-  border-radius: 10px;
+  border-radius: 12px;
   color: #64748b;
-  border: 1px dashed var(--border);
+  border: 2px dashed var(--border);
+  font-weight: 500;
 }
 
-/* Overzicht tab */
+/* Overzicht Tab */
 .overzicht-card {
   background: white;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: 12px;
   margin-bottom: 15px;
   border: 1px solid var(--border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
 
 .overzicht-card h3 {
   margin-top: 0;
-  color: var(--primary);
+  color: var(--secondary);
+  font-size: 1.2rem;
 }
 
 .deelnemers-tags {
@@ -227,14 +271,16 @@ select:focus, input:focus {
 }
 
 .tag {
-  background: #f1f5f9;
-  padding: 4px 10px;
-  border-radius: 12px;
+  background: #f0f7e8;
+  color: #3e6614;
+  padding: 5px 12px;
+  border-radius: 16px;
   font-size: 0.85rem;
-  border: 1px solid #cbd5e1;
+  font-weight: 600;
+  border: 1px solid #cce2b5;
 }
 
-/* Beheer tab */
+/* Beheer Tab */
 .admin-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -243,9 +289,14 @@ select:focus, input:focus {
 
 .admin-card {
   background: white;
-  padding: 20px;
-  border-radius: 10px;
+  padding: 22px;
+  border-radius: 12px;
   border: 1px solid var(--border);
+}
+
+.admin-card h3 {
+  color: var(--secondary);
+  margin-top: 0;
 }
 
 .form-group {
@@ -255,7 +306,8 @@ select:focus, input:focus {
 .form-group label {
   display: block;
   margin-bottom: 5px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .form-group input, .form-group select {
@@ -267,7 +319,7 @@ select:focus, input:focus {
   display: none;
   position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 75, 135, 0.4);
   justify-content: center;
   align-items: center;
   z-index: 1000;
@@ -276,10 +328,16 @@ select:focus, input:focus {
 .modal {
   background: white;
   padding: 25px;
-  border-radius: 10px;
+  border-radius: 12px;
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  border-top: 6px solid var(--primary);
+}
+
+.modal h3 {
+  color: var(--secondary);
+  margin-top: 0;
 }
 
 .modal-actions {
