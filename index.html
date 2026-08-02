@@ -62,24 +62,62 @@
   <!-- TAB 3: BEHEER & DATA -->
   <div id="tab-beheer" class="tab-content">
     <div class="admin-grid">
+      
+      <!-- KAMP TOEVOEGEN -->
       <div class="admin-card">
-        <h3>Nieuwe Deelnemer Toevoegen</h3>
+        <h3>1. Nieuw Deelkamp</h3>
+        <div class="form-group">
+          <label>Naam Kamp:</label>
+          <input type="text" id="nieuwKampNaam" placeholder="bijv. Surfen of Gaming">
+        </div>
+        <button class="btn btn-primary" onclick="voegKampToe()">Kamp Toevoegen</button>
+      </div>
+
+      <!-- DEELNEMER TOEVOEGEN -->
+      <div class="admin-card">
+        <h3>2. Nieuwe Deelnemer</h3>
         <div class="form-group">
           <label>Naam Deelnemer:</label>
-          <input type="text" id="nieuwDeelnemerNaam" placeholder="Bijv. Lucas De Smet">
+          <input type="text" id="nieuwDeelnemerNaam" placeholder="bijv. Lucas De Smet">
         </div>
         <div class="form-group">
           <label>Deelkamp:</label>
           <select id="nieuwDeelnemerKamp"></select>
         </div>
-        <button class="btn btn-primary" onclick="voegDeelnemerToe()">Toevoegen</button>
+        <button class="btn btn-primary" onclick="voegDeelnemerToe()">Deelnemer Toevoegen</button>
       </div>
 
-      <div class="admin-card">
-        <h3>Database Beheer</h3>
-        <p>Herstel de standaardgegevens in Firebase als je opnieuw wilt beginnen.</p>
-        <button class="btn btn-danger" onclick="resetDatabase()">Reset Naar Standaarddata</button>
+      <!-- ACTIVITEIT TOEVOEGEN -->
+      <div class="admin-card full-width">
+        <h3>3. Nieuwe Keuzeactiviteit</h3>
+        <div class="admin-grid-inner">
+          <div class="form-group">
+            <label>Naam Activiteit:</label>
+            <input type="text" id="nieuwActNaam" placeholder="bijv. Golfsurfen of D&D Intro">
+          </div>
+          <div class="form-group">
+            <label>Behoort tot Kamp:</label>
+            <select id="nieuwActKamp"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mogelijk in periodes:</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" class="act-periode" value="voormiddag"> Voormiddag</label>
+            <label><input type="checkbox" class="act-periode" value="namiddag1"> Namiddag 1</label>
+            <label><input type="checkbox" class="act-periode" value="namiddag2"> Namiddag 2</label>
+            <label><input type="checkbox" class="act-periode" value="avond"> Avond</label>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="voegActiviteitToe()">Activiteit Toevoegen</button>
       </div>
+
+      <!-- OVERZICHT BEHEERLIJST -->
+      <div class="admin-card full-width">
+        <h3>Huidige Gegevens Wis/Beheer-opties</h3>
+        <div id="beheerLijstContainer"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -95,7 +133,6 @@
   </div>
 </div>
 
-<!-- Firebase Modular SDK Script -->
 <script type="module" src="script.js"></script>
 </body>
 </html>
