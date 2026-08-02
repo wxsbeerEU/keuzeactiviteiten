@@ -80,8 +80,10 @@ header {
   margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
 }
+
+.flex-grow { flex-grow: 1; }
 
 select, input[type="text"], input[type="password"] {
   padding: 10px 14px;
@@ -89,6 +91,7 @@ select, input[type="text"], input[type="password"] {
   border-radius: 8px;
   font-size: 0.95rem;
   outline: none;
+  width: 100%;
 }
 
 select:focus, input:focus {
@@ -146,7 +149,7 @@ select:focus, input:focus {
 }
 
 .periode-title {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--primary);
@@ -185,25 +188,43 @@ select:focus, input:focus {
   border: 1px solid #cce2b5;
 }
 
-/* Layout helpers */
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .margin-bottom { margin-bottom: 20px; }
 .margin-top { margin-top: 15px; }
 .help-text { font-size: 0.9rem; color: #64748b; margin-top: -5px; }
 .max-width-center { max-width: 450px; margin: 40px auto; }
 
-/* Matrix voor instellen aanbod */
-.checkbox-matrix {
+/* Grid voor aanbod selectie per periode */
+.periodes-aanbod-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.periode-aanbod-box {
   background: #f8faf6;
-  padding: 15px;
+  padding: 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
 }
 
-/* Beheer grid */
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.checkbox-list label {
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
 .admin-card { background: white; padding: 22px; border-radius: 12px; border: 1px solid var(--border); }
 .admin-card.full-width { grid-column: 1 / -1; }
@@ -211,17 +232,11 @@ select:focus, input:focus {
 
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; margin-bottom: 5px; font-weight: 700; color: var(--text); }
-.form-group input[type="text"], .form-group input[type="password"], .form-group select { width: 100%; }
 
-.checkbox-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 5px; }
-.checkbox-group label { font-weight: normal; cursor: pointer; }
-
-/* Tables */
 .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .admin-table th, .admin-table td { padding: 10px; border: 1px solid var(--border); text-align: left; }
 .admin-table th { background: #f0f7e8; color: var(--secondary); }
 
-/* Modal */
 .modal-backdrop {
   display: none;
   position: fixed;
