@@ -40,12 +40,12 @@
     <!-- SECTIE 1: AANBOD AANPASSEN PER PERIODE -->
     <div id="instellingenSectie" style="display:none;" class="admin-card margin-bottom">
       <div class="flex-between">
-        <h3>1. Selecteer welke activiteiten er nu mogelijk zijn per periode</h3>
+        <h3>1. Selecteer welke activiteiten er mogelijk zijn per periode</h3>
         <button class="btn btn-secondary btn-sm" onclick="toggleAanbodPaneel()">Aanbod Openen / Sluiten</button>
       </div>
       
       <div id="aanbodPaneel" style="display:none; margin-top: 15px;">
-        <p class="help-text">Vink hieronder aan welke activiteiten uit de totale database er per periode kiest-baar zijn:</p>
+        <p class="help-text">Vink aan welke activiteiten uit de Master Database beschikbaar zijn per periode voor dit kamp:</p>
         
         <div class="periodes-aanbod-grid">
           <div class="periode-aanbod-box">
@@ -66,7 +66,7 @@
           </div>
         </div>
 
-        <button class="btn btn-primary margin-top" onclick="opslaanAanbod()">Aanbod Voor Dit Kamp Opslaan</button>
+        <button class="btn btn-primary margin-top" onclick="opslaanAanbod()">Aanbod Opslaan</button>
       </div>
     </div>
 
@@ -142,12 +142,12 @@
       <!-- MASTER ACTIVITEIT TOEVOEGEN -->
       <div class="admin-card full-width">
         <h3>3. Totale Activiteiten Database (Master-Lijst)</h3>
-        <p class="help-text">Voeg hier alle activiteiten toe die ooit georganiseerd kunnen worden.</p>
+        <p class="help-text">Voeg hier nieuwe activiteiten toe aan de centrale database.</p>
         <div class="form-group">
           <label>Naam Activiteit:</label>
-          <input type="text" id="nieuwActNaam" placeholder="bijv. Archery Tag, Vlotten Bouwen, Kasteel Larp...">
+          <input type="text" id="nieuwActNaam" placeholder="bijv. Archery Tag, Vlotten Bouwen...">
         </div>
-        <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Totale Database</button>
+        <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Master-Database</button>
       </div>
 
       <!-- WACHTWOORD WIJZIGEN -->
