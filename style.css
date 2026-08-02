@@ -57,7 +57,7 @@ header {
   font-size: 0.9rem;
 }
 
-/* Tabs */
+/* Navigatie Tabs */
 .nav-tabs {
   display: flex;
   gap: 10px;
@@ -125,7 +125,7 @@ select:focus, input:focus {
   min-width: 300px;
 }
 
-/* Actions Bar */
+/* Actiebalk */
 .actions-bar {
   display: none;
   gap: 10px;
@@ -150,7 +150,7 @@ select:focus, input:focus {
 .btn-danger { background: var(--danger); color: white; }
 .btn-danger:hover { background: #b71c1c; }
 
-/* Cards Deelnemers */
+/* Deelnemer Kaarten */
 .deelnemer-card {
   background: var(--card-bg);
   border-radius: 10px;
@@ -160,19 +160,13 @@ select:focus, input:focus {
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
-.deelnemer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 10px;
-}
-
 .deelnemer-naam {
   font-size: 1.2rem;
   font-weight: bold;
   color: var(--text);
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
 }
 
 .periodes-grid {
@@ -268,7 +262,7 @@ select:focus, input:focus {
   width: 100%;
 }
 
-/* Modal */
+/* Modal Popup */
 .modal-backdrop {
   display: none;
   position: fixed;
@@ -291,11 +285,4 @@ select:focus, input:focus {
 .modal-actions {
   text-align: right;
   margin-top: 20px;
-}
-
-@media print {
-  header, .nav-tabs, .kamp-selector-card, .actions-bar, .admin-grid { display: none !important; }
-  .tab-content { display: block !important; }
-  body { background: white; padding: 0; }
-  .deelnemer-card { break-inside: avoid; border: 1px solid #000; }
 }
