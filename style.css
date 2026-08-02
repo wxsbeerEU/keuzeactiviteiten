@@ -139,7 +139,7 @@ select:focus, input:focus {
   box-shadow: 0 0 0 3px rgba(112, 178, 42, 0.15);
 }
 
-.actions-bar { display: none; gap: 12px; margin-bottom: 20px; }
+.actions-bar { display: none; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
 
 .btn {
   padding: 11px 20px;
@@ -157,6 +157,7 @@ select:focus, input:focus {
 .btn-secondary { background: var(--secondary); color: white; }
 .btn-secondary:hover { background: var(--secondary-hover); }
 .btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { background: #a71d1d; }
 
 .deelnemer-card {
   background: var(--card-bg);
