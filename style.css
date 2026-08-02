@@ -78,13 +78,13 @@ header {
   border-radius: 12px;
   border: 1px solid var(--border);
   margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
 }
 
+.flex-column { flex-direction: column; }
+.align-start { align-items: flex-start; }
 .flex-grow { flex-grow: 1; }
 .max-width-300 { max-width: 300px; }
+.margin-top-sm { margin-top: 8px; }
 
 select, input[type="text"], input[type="password"], input[type="number"] {
   padding: 10px 14px;
@@ -127,13 +127,28 @@ select:focus, input:focus {
   border: 1px solid var(--border);
 }
 
+.deelnemer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #f0f4ec;
+  padding-bottom: 10px;
+}
+
 .deelnemer-naam {
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--secondary);
-  margin-bottom: 15px;
-  border-bottom: 2px solid #f0f4ec;
-  padding-bottom: 10px;
+}
+
+.kamp-tag-small {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
 }
 
 .periodes-grid {
@@ -194,7 +209,32 @@ select:focus, input:focus {
 .help-text { font-size: 0.9rem; color: #64748b; margin-top: -5px; }
 .max-width-center { max-width: 450px; margin: 40px auto; }
 
-/* Periodes grid in Beheer */
+/* Matrix checkboxes */
+.checkbox-matrix {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.checkbox-label {
+  background: #f8faf6;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.checkbox-label:hover {
+  background: #f0f7e8;
+}
+
 .periodes-aanbod-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -261,7 +301,7 @@ select:focus, input:focus {
 
 .modal-backdrop {
   display: none;
-  position: fixed;
+  position fixed;
   top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0, 75, 135, 0.4);
   justify-content: center;
