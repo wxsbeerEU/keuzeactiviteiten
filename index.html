@@ -62,7 +62,7 @@
     <div class="actions-bar" id="actionsBar">
       <button class="btn btn-primary" onclick="opslaanKeuzes()">💾 Keuzes Opslaan</button>
       <button class="btn btn-danger" onclick="resetKeuzesVanKamp()">🔄 Reset Keuzes Van Dit Kamp</button>
-      <button class="btn btn-secondary" onclick="exportCSV()">📊 Export Excel (CSV)</button>
+      <button class="btn btn-secondary" onclick="exportCSV()">📊 Export Excel (Per Tijdsstip)</button>
       <button class="btn btn-secondary" onclick="window.print()">🖨️ Afdrukken</button>
     </div>
 
@@ -105,7 +105,7 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
-      <!-- STATISTIEKEN (VOLLE BREEDTE) -->
+      <!-- STATISTIEKEN -->
       <div class="card full-width bg-stats">
         <div class="stats-grid">
           <div class="stat-box">
@@ -127,7 +127,7 @@
         </div>
       </div>
 
-      <!-- 1. DAGAANBOD & CAPACITEIT (VOLLE BREEDTE) -->
+      <!-- 1. DAGAANBOD & CAPACITEIT -->
       <div class="card full-width">
         <div class="card-header">
           <h3>1. Dagaanbod & Max. Capaciteit Instellen</h3>
@@ -237,6 +237,9 @@
     </div>
   </div>
 </div>
+
+<!-- PRINT CONTAINER (INFORMATIEF INGEDEELD PER TIJDSSTIP) -->
+<div id="printContainer" class="print-only"></div>
 
 <!-- MODAL DIALOG -->
 <div class="modal-backdrop" id="customModal">
