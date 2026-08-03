@@ -56,7 +56,6 @@
 
     <div class="actions-bar" id="actionsBar">
       <button class="btn btn-primary" onclick="opslaanKeuzes()">💾 Keuzes Opslaan</button>
-      <button class="btn btn-danger" onclick="resetKeuzesVanKamp()">🔄 Reset Keuzes Van Dit Kamp</button>
       <button class="btn btn-secondary" onclick="exportCSV()">📊 Export Excel (CSV)</button>
       <button class="btn btn-secondary" onclick="window.print()">🖨️ Afdrukken</button>
     </div>
@@ -82,7 +81,7 @@
     <div id="overzichtContainer"></div>
   </div>
 
-  <!-- TAB 3: BEHEER & DATA (BEVEILIGD) -->
+  <!-- TAB 3: BEHEER & DATA (BEVEILIGD & GEOPTIMALISEERD) -->
   <div id="tab-beheer" class="tab-content">
     
     <!-- WACHTWOORD FORMULIER -->
@@ -99,6 +98,28 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
+      <!-- STATISTIEKEN BAVENAAN -->
+      <div class="admin-card full-width bg-light-green">
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-num" id="statKampen">0</span>
+            <span class="stat-label">Deelkampen</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="statDeelnemers">0</span>
+            <span class="stat-label">Deelnemers</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="statMasterAct">0</span>
+            <span class="stat-label">Master Activiteiten</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="statKeuzes">0</span>
+            <span class="stat-label">Opgeslagen Keuzes</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 1. ACTIVITEITENAANBOD & CAPACITEIT PERIODE -->
       <div class="admin-card full-width">
         <h3>1. Activiteitenaanbod & Max. Capaciteit Instellen</h3>
@@ -134,7 +155,10 @@
               <div id="beheer-aanbod-avond" class="checkbox-list"></div>
             </div>
           </div>
-          <button class="btn btn-primary margin-top" onclick="opslaanBeheerAanbodMulti()">Aanbod Opslaan Voor Geselecteerde Kampen</button>
+          <div class="btn-group margin-top">
+            <button class="btn btn-primary" onclick="opslaanBeheerAanbodMulti()">Aanbod Opslaan Voor Geselecteerde Kampen</button>
+            <button class="btn btn-danger" onclick="resetAanbodVanGeselecteerdeKampen()">🔄 Reset Dagaanbod (Geselecteerde Kampen)</button>
+          </div>
         </div>
       </div>
 
@@ -172,11 +196,11 @@
         <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Master-Database</button>
       </div>
 
-      <!-- ALGEMENE DATA RESETS -->
+      <!-- 5. SNELBEHEER & RESETS -->
       <div class="admin-card full-width">
-        <h3>Database Resets</h3>
-        <p class="help-text">Wilt u alle keuzes van de deelnemers van alle kampen in één keer wissen voor een nieuwe dag?</p>
-        <button class="btn btn-danger" onclick="resetAlleKeuzesGlobal()">⚠️ Wis Alle Keuzes Van Alle Kampen</button>
+        <h3>Snelbeheer & Global Resets</h3>
+        <p class="help-text">Wilt u alle geselecteerde keuzes van alle deelnemers uit de database wissen voor een nieuwe dag/week?</p>
+        <button class="btn btn-danger" onclick="resetAlleKeuzesGlobal()">🧹 Reset Alle Deelnemer Keuzes (Alle Kampen)</button>
       </div>
 
       <!-- WACHTWOORD WIJZIGEN -->
