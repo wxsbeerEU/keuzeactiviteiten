@@ -9,26 +9,29 @@
 <body>
 
 <div class="container">
+  <!-- HEADER -->
   <header>
     <div class="header-title">
       <h1>Topvakantie Keuzeactiviteiten</h1>
-      <p>Selectie- en beheersysteem voor kampactiviteiten</p>
+      <p>Centraal selectie- en beheersysteem voor dagactiviteiten</p>
     </div>
     <div class="header-badges">
       <span class="badge" id="kampBadge">Selecteer een kamp</span>
     </div>
   </header>
 
+  <!-- NAVIGATIE TABS -->
   <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="openTab('selectie')">Keuzes Invoeren</button>
-    <button class="tab-btn" onclick="openTab('overzicht')">Overzicht Per Activiteit</button>
-    <button class="tab-btn" onclick="openTab('beheer')">Beheer & Data 🔒</button>
+    <button class="tab-btn active" onclick="openTab('selectie')">📝 Keuzes Invoeren</button>
+    <button class="tab-btn" onclick="openTab('overzicht')">📊 Overzicht Per Activiteit</button>
+    <button class="tab-btn" onclick="openTab('beheer')">⚙️ Beheer & Data 🔒</button>
   </nav>
 
-  <!-- TAB 1: KEUZES INVOEREN (VOOR DEELNEMERS/LEIDING) -->
+  <!-- TAB 1: KEUZES INVOEREN PER DEELNEMER -->
   <div id="tab-selectie" class="tab-content active">
     
-    <div class="kamp-selector-card">
+    <!-- KAMP SELECTOR -->
+    <div class="card selector-card">
       <div class="form-group flex-grow">
         <label for="kampSelect"><strong>Kies het Deelkamp:</strong></label>
         <select id="kampSelect" onchange="onKampChange()">
@@ -37,11 +40,11 @@
       </div>
     </div>
 
-    <!-- VOORTGANG EN ZOEKBALK -->
+    <!-- VOORTGANG & ZOEKBALK -->
     <div id="selectieHeader" style="display:none;" class="margin-bottom">
-      <div class="progress-card">
+      <div class="card progress-card">
         <div class="progress-info">
-          <span><strong>Voortgang inschrijvingen:</strong></span>
+          <span><strong>Inschrijfvoortgang:</strong></span>
           <span id="progressText">0 / 0 keuzes ingevuld (0%)</span>
         </div>
         <div class="progress-bar-bg">
@@ -49,27 +52,33 @@
         </div>
       </div>
 
-      <div class="search-bar-card">
-        <input type="text" id="deelnemerZoekInput" placeholder="🔍 Zoek deelnemer op naam..." oninput="filterDeelnemersLijst()">
+      <div class="card search-card">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="deelnemerZoekInput" placeholder="Zoek deelnemer op naam..." oninput="filterDeelnemersLijst()">
+        </div>
       </div>
     </div>
 
+    <!-- ACTIEBALK -->
     <div class="actions-bar" id="actionsBar">
       <button class="btn btn-primary" onclick="opslaanKeuzes()">💾 Keuzes Opslaan</button>
+      <button class="btn btn-danger" onclick="resetKeuzesVanKamp()">🔄 Reset Keuzes Van Dit Kamp</button>
       <button class="btn btn-secondary" onclick="exportCSV()">📊 Export Excel (CSV)</button>
       <button class="btn btn-secondary" onclick="window.print()">🖨️ Afdrukken</button>
     </div>
 
+    <!-- DEELNEMERS CONTAINER -->
     <div id="deelnemersContainer">
       <div class="empty-state">
-        Kies hierboven een deelkamp om de deelnemers en hun keuzes te beheren.
+        <p>Kies hierboven een deelkamp om de deelnemers en hun keuzes te beheren.</p>
       </div>
     </div>
   </div>
 
   <!-- TAB 2: OVERZICHT PER ACTIVITEIT -->
   <div id="tab-overzicht" class="tab-content">
-    <div class="kamp-selector-card">
+    <div class="card selector-card">
       <div class="form-group flex-grow">
         <label for="overzichtKampSelect"><strong>Filter op Kamp:</strong></label>
         <select id="overzichtKampSelect" onchange="updateOverzicht()">
@@ -81,25 +90,25 @@
     <div id="overzichtContainer"></div>
   </div>
 
-  <!-- TAB 3: BEHEER & DATA (BEVEILIGD & GEOPTIMALISEERD) -->
+  <!-- TAB 3: BEHEER & DATA (BEVEILIGD) -->
   <div id="tab-beheer" class="tab-content">
     
-    <!-- WACHTWOORD FORMULIER -->
-    <div id="loginFormCard" class="admin-card max-width-center">
+    <!-- INLOGGEN BEHEER -->
+    <div id="loginFormCard" class="card max-width-center align-center">
       <h3>Beheer Beveiligd 🔒</h3>
-      <p>Voer het beheerderswachtwoord in om toegang te krijgen tot het beheer.</p>
-      <div class="form-group">
+      <p>Voer het beheerderswachtwoord in om toegang te krijgen tot de instellingen.</p>
+      <div class="form-group width-100">
         <label>Wachtwoord:</label>
         <input type="password" id="adminWachtwoordInput" placeholder="Voer wachtwoord in">
       </div>
-      <button class="btn btn-primary" onclick="verifieerWachtwoord()">Inloggen</button>
+      <button class="btn btn-primary width-100" onclick="verifieerWachtwoord()">Inloggen</button>
     </div>
 
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
-      <!-- STATISTIEKEN BAVENAAN -->
-      <div class="admin-card full-width bg-light-green">
+      <!-- STATISTIEKEN BENT -->
+      <div class="card full-width bg-stats">
         <div class="stats-grid">
           <div class="stat-box">
             <span class="stat-num" id="statKampen">0</span>
@@ -115,25 +124,27 @@
           </div>
           <div class="stat-box">
             <span class="stat-num" id="statKeuzes">0</span>
-            <span class="stat-label">Opgeslagen Keuzes</span>
+            <span class="stat-label">Ingevulde Keuzes</span>
           </div>
         </div>
       </div>
 
-      <!-- 1. ACTIVITEITENAANBOD & CAPACITEIT PERIODE -->
-      <div class="admin-card full-width">
-        <h3>1. Activiteitenaanbod & Max. Capaciteit Instellen</h3>
-        <p class="help-text">Vink aan welke deelkampen deze activiteiten samen doen, selecteer per tijdsstip de activiteiten en stel optioneel een max. aantal deelnemers in (0 = onbeperkt):</p>
+      <!-- 1. DAGAANBOD & CAPACITEIT -->
+      <div class="card full-width">
+        <div class="card-header">
+          <h3>1. Dagaanbod & Max. Capaciteit Instellen</h3>
+        </div>
+        <p class="help-text">Selecteer de kampen die deze activiteiten samen doen en stel per dagdeel de gewenste keuzes en max. capaciteit in (0 = onbeperkt):</p>
 
         <div class="form-group margin-top-sm">
-          <div class="flex-between">
+          <div class="flex-between margin-bottom-sm">
             <label><strong>Selecteer Deelkamp(en) voor dit aanbod:</strong></label>
-            <div>
+            <div class="btn-group">
               <button class="btn btn-secondary btn-sm" onclick="selecteerAlleBeheerKampen(true)">Alles Selecteren</button>
               <button class="btn btn-secondary btn-sm" onclick="selecteerAlleBeheerKampen(false)">Wis Selectie</button>
             </div>
           </div>
-          <div id="beheerKampCheckboxesGrid" class="checkbox-matrix margin-top-sm"></div>
+          <div id="beheerKampCheckboxesGrid" class="checkbox-matrix"></div>
         </div>
 
         <div id="beheerAanbodPanel" style="display:none;" class="margin-top">
@@ -156,14 +167,14 @@
             </div>
           </div>
           <div class="btn-group margin-top">
-            <button class="btn btn-primary" onclick="opslaanBeheerAanbodMulti()">Aanbod Opslaan Voor Geselecteerde Kampen</button>
+            <button class="btn btn-primary" onclick="opslaanBeheerAanbodMulti()">💾 Aanbod Opslaan</button>
             <button class="btn btn-danger" onclick="resetAanbodVanGeselecteerdeKampen()">🔄 Reset Dagaanbod (Geselecteerde Kampen)</button>
           </div>
         </div>
       </div>
 
       <!-- 2. KAMP TOEVOEGEN -->
-      <div class="admin-card">
+      <div class="card">
         <h3>2. Nieuw Deelkamp</h3>
         <div class="form-group">
           <label>Naam Kamp:</label>
@@ -173,7 +184,7 @@
       </div>
 
       <!-- 3. DEELNEMER TOEVOEGEN -->
-      <div class="admin-card">
+      <div class="card">
         <h3>3. Nieuwe Deelnemer</h3>
         <div class="form-group">
           <label>Naam Deelnemer:</label>
@@ -187,7 +198,7 @@
       </div>
 
       <!-- 4. MASTER ACTIVITEIT TOEVOEGEN -->
-      <div class="admin-card full-width">
+      <div class="card full-width">
         <h3>4. Totale Activiteiten Database (Master-Lijst)</h3>
         <div class="form-group">
           <label>Naam Activiteit:</label>
@@ -196,15 +207,15 @@
         <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Master-Database</button>
       </div>
 
-      <!-- 5. SNELBEHEER & RESETS -->
-      <div class="admin-card full-width">
-        <h3>Snelbeheer & Global Resets</h3>
-        <p class="help-text">Wilt u alle geselecteerde keuzes van alle deelnemers uit de database wissen voor een nieuwe dag/week?</p>
+      <!-- 5. RESETS -->
+      <div class="card full-width">
+        <h3>5. Global Resets</h3>
+        <p class="help-text">Wis alle geselecteerde keuzes van alle deelnemers uit de gehele database voor een nieuwe dag.</p>
         <button class="btn btn-danger" onclick="resetAlleKeuzesGlobal()">🧹 Reset Alle Deelnemer Keuzes (Alle Kampen)</button>
       </div>
 
       <!-- WACHTWOORD WIJZIGEN -->
-      <div class="admin-card full-width">
+      <div class="card full-width">
         <h3>Beheerderswachtwoord Wijzigen</h3>
         <div class="admin-grid-inner">
           <div class="form-group">
@@ -216,11 +227,11 @@
             <input type="password" id="nieuwWachtwoord2" placeholder="Herhaal wachtwoord">
           </div>
         </div>
-        <button class="btn btn-secondary" onclick="wijzigWachtwoord()">Wachtwoord Opslaan in Firebase</button>
+        <button class="btn btn-secondary" onclick="wijzigWachtwoord()">Wachtwoord Opslaan</button>
       </div>
 
       <!-- OVERZICHT BEHEERLIJST -->
-      <div class="admin-card full-width">
+      <div class="card full-width">
         <h3>Beheer Bestaande Data</h3>
         <div id="beheerLijstContainer"></div>
       </div>
@@ -229,7 +240,7 @@
   </div>
 </div>
 
-<!-- Modal Melding -->
+<!-- MODAL DIALOG -->
 <div class="modal-backdrop" id="customModal">
   <div class="modal">
     <h3 id="modalTitle">Melding</h3>
