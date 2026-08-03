@@ -137,7 +137,7 @@ window.onKampChange = function() {
     if (badge) badge.textContent = 'Selecteer een kamp';
     container.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">⛺</div>
+        <svg class="empty-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
         <h3>Geen Deelkamp Geselecteerd</h3>
         <p>Kies hierboven een deelkamp om de lijst van deelnemers te openen en hun keuzes in te voeren.</p>
       </div>
@@ -700,7 +700,7 @@ window.verwijderKamp = async function(id) {
   updateStats();
 };
 
-// 4. OVERZICHT (ENKEL SECTIES WANNEER KEUZES BESTAAN)
+// 4. OVERZICHT & EXPORT
 window.updateOverzicht = function() {
   const filterKamp = document.getElementById('overzichtKampSelect').value;
   const container = document.getElementById('overzichtContainer');
@@ -708,10 +708,10 @@ window.updateOverzicht = function() {
   container.innerHTML = '';
 
   const periodes = [
-    { id: 'voormiddag', label: '🌅 Voormiddag' },
-    { id: 'namiddag1', label: '☀️ Namiddag 1' },
-    { id: 'namiddag2', label: '🌤️ Namiddag 2' },
-    { id: 'avond', label: '🌙 Avond' }
+    { id: 'voormiddag', label: 'Voormiddag' },
+    { id: 'namiddag1', label: 'Namiddag 1' },
+    { id: 'namiddag2', label: 'Namiddag 2' },
+    { id: 'avond', label: 'Avond' }
   ];
 
   let erIsMinstensEenInschrijving = false;
@@ -759,10 +759,10 @@ window.updateOverzicht = function() {
   }
 };
 
+// EXPORT EXCEL GEFORMATTEERD (.XLS MET KLEUREN EN STIJL)
 window.exportCSV = function() {
   const filterKamp = document.getElementById('kampSelect').value;
-  let csv = `TIJDSSTIP,ACTIVITEIT,DEELNEMER,KAMP\n`;
-
+  
   const periodes = [
     { id: 'voormiddag', label: 'Voormiddag' },
     { id: 'namiddag1', label: 'Namiddag 1' },
@@ -770,7 +770,42 @@ window.exportCSV = function() {
     { id: 'avond', label: 'Avond' }
   ];
 
+  let excelHtml = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <!--[if gte mso 9]>
+      <xml>
+        <x:ExcelWorkbook>
+          <x:ExcelWorksheets>
+            <x:ExcelWorksheet>
+              <x:Name>Keuzeactiviteiten</x:Name>
+              <x:WorksheetOptions>
+                <x:DisplayGridlines/>
+              </x:WorksheetOptions>
+            </x:ExcelWorksheet>
+          </x:ExcelWorksheets>
+        </x:ExcelWorkbook>
+      </xml>
+      <![endif]-->
+      <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
+      <style>
+        th { background-color: #70b22a; color: white; font-weight: bold; border: 1px solid #5d9622; padding: 8px; text-align: left; }
+        td { border: 1px solid #dbe4d5; padding: 6px; font-family: Arial, sans-serif; }
+        .period-header { background-color: #004b87; color: white; font-size: 14pt; font-weight: bold; }
+        .act-header { background-color: #f0f7e8; color: #004b87; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <table>
+        <tr><td colspan="3" style="font-size: 16pt; font-weight: bold; color: #004b87;">Topvakantie Keuzeactiviteiten Overzicht</td></tr>
+        <tr><td></td></tr>
+  `;
+
   periodes.forEach(p => {
+    let heeftData = false;
+    let periodBlock = `<tr><td colspan="3" class="period-header">${p.label}</td></tr>`;
+    periodBlock += `<tr><th>Activiteit</th><th>Deelnemer</th><th>Kamp</th></tr>`;
+
     appData.masterActiviteiten.forEach(act => {
       const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
       const ingeschreven = deelnemersLijst.filter(d => {
@@ -779,26 +814,40 @@ window.exportCSV = function() {
       });
 
       if (ingeschreven.length > 0) {
+        heeftData = true;
         ingeschreven.forEach(d => {
           const kamp = appData.deelkampen.find(k => k.id === d.kampId);
-          csv += `"${p.label}","${act.naam}","${d.naam}","${kamp ? kamp.naam : ''}"\n`;
+          periodBlock += `
+            <tr>
+              <td class="act-header">${act.naam}</td>
+              <td>${d.naam}</td>
+              <td>${kamp ? kamp.naam : ''}</td>
+            </tr>
+          `;
         });
       }
     });
+
+    if (heeftData) {
+      excelHtml += periodBlock + `<tr><td></td></tr>`;
+    }
   });
 
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  excelHtml += `</table></body></html>`;
+
+  const blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `Topvakantie_Lijst_Per_Tijdsstip.csv`;
+  link.download = `Topvakantie_Keuzes_Geformatteerd.xls`;
   link.click();
 };
 
+// HERSTRUCTUREER PRINT WEERGAVE: ELKE ACTIVITEIT OP EEN APPARTE PAGINA!
 window.onbeforeprint = function() {
   const printContainer = document.getElementById('printContainer');
   const filterKamp = document.getElementById('kampSelect').value;
 
-  let html = `2Topvakantie Keuzeactiviteiten - Overzicht per Tijdsstip</h2>`;
+  let html = '';
 
   const periodes = [
     { id: 'voormiddag', label: 'Voormiddag' },
@@ -808,9 +857,6 @@ window.onbeforeprint = function() {
   ];
 
   periodes.forEach(p => {
-    let periodeHtml = '';
-    let heeftInschrijvingen = false;
-
     appData.masterActiviteiten.forEach(act => {
       const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
       const ingeschreven = deelnemersLijst.filter(d => {
@@ -818,21 +864,48 @@ window.onbeforeprint = function() {
         return isKampMatch && appData.keuzes[`${d.id}_${p.id}`] === act.id;
       });
 
+      // Elk tijdsstip + activiteit die inschrijvingen heeft krijgt een EIGEN PAGINA!
       if (ingeschreven.length > 0) {
-        heeftInschrijvingen = true;
-        periodeHtml += `
-          <div class="print-act-title">${act.naam} (${ingeschreven.length} deelnemers)</div>
-          <ol class="print-names-list">
-            ${ingeschreven.map(d => `<li>${d.naam}</li>`).join('')}
-          </ol>
+        html += `
+          <div class="print-page">
+            <div class="print-header">
+              <span class="print-period-badge">${p.label}</span>
+              <div class="print-act-title">${act.naam}</div>
+              <div class="print-count">Totaal inschrijvingen: ${ingeschreven.length} deelnemer(s)</div>
+            </div>
+
+            <table class="print-table">
+              <thead>
+                <tr>
+                  <th class="print-checkbox-col">Aanw.</th>
+                  <th>#</th>
+                  <th>Naam Deelnemer</th>
+                  <th>Kamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ingeschreven.map((d, index) => {
+                  const kamp = appData.deelkampen.find(k => k.id === d.kampId);
+                  return `
+                    <tr>
+                      <td class="print-checkbox-col"><span class="print-checkbox-box"></span></td>
+                      <td>${index + 1}</td>
+                      <td><strong>${d.naam}</strong></td>
+                      <td>${kamp ? kamp.naam : ''}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
         `;
       }
     });
-
-    if (heeftInschrijvingen) {
-      html += `<div class="print-period-header">${p.label}</div>${periodeHtml}`;
-    }
   });
+
+  if (!html) {
+    html = `<div class="print-page"><p>Er zijn geen inschrijvingen gevonden om af te drukken.</p></div>`;
+  }
 
   printContainer.innerHTML = html;
 };
