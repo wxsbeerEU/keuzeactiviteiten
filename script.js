@@ -68,6 +68,7 @@ async function laadFirebaseData() {
 function initApp() {
   vulDropdowns();
   updateOverzicht();
+  updateStats();
 }
 
 function vulDropdowns() {
@@ -85,6 +86,16 @@ function vulDropdowns() {
     overzichtSelect.innerHTML += opt;
     nieuwDeelnemerKamp.innerHTML += opt;
   });
+}
+
+function updateStats() {
+  if (!isAdminIngelogd) return;
+  document.getElementById('statKampen').textContent = appData.deelkampen.length;
+  document.getElementById('statDeelnemers').textContent = appData.deelnemers.length;
+  document.getElementById('statMasterAct').textContent = appData.masterActiviteiten.length;
+  
+  const ingevuldeKeuzesAantal = Object.keys(appData.keuzes).length;
+  document.getElementById('statKeuzes').textContent = ingevuldeKeuzesAantal;
 }
 
 // 1. KEUZES INVOEREN (PER KAMP)
@@ -120,7 +131,7 @@ function berekenAantallen(kampId) {
   deelnemersInKamp.forEach(d => {
     ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
       const actId = appData.keuzes[`${d.id}_${p}`];
-      if (actId) {
+      if (actId && actId !== 'geen') {
         const sleutel = `${p}_${actId}`;
         aantallen[sleutel] = (aantallen[sleutel] || 0) + 1;
       }
@@ -169,11 +180,14 @@ function renderDeelnemersFormulier(kampId) {
     periodes.forEach(p => {
       const toegestaneItems = kampAanbod[p.id] || [];
       const key = `${d.id}_${p.id}`;
-      const geselecteerdActId = appData.keuzes[key] || '';
+      
+      // Indien niet expliciet gekozen, is de waarde 'geen'
+      const geselecteerdActId = appData.keuzes[key] !== undefined ? appData.keuzes[key] : 'geen';
 
-      if (geselecteerdActId) ingevuldePeriodes++;
+      // 'geen' of een gekozen activiteit telt nu als een geldige keuze
+      if (appData.keuzes[key] !== undefined) ingevuldePeriodes++;
 
-      let options = '<option value="">-- Geen --</option>';
+      let options = `<option value="geen" ${geselecteerdActId === 'geen' ? 'selected' : ''}>-- Geen --</option>`;
       
       const mogelijkeMasterAct = appData.masterActiviteiten.filter(a => toegestaneItems.some(item => item.actId === a.id));
       sorteerOpNaam(mogelijkeMasterAct);
@@ -198,6 +212,7 @@ function renderDeelnemersFormulier(kampId) {
       `;
     });
 
+    // 4 periodes ingevuld (inclusief '-- Geen --') = Volledig
     const isVolledig = ingevuldePeriodes === 4;
     const statusBadge = isVolledig 
       ? '<span class="status-tag complete">✓ 4/4 Ingesteld</span>' 
@@ -222,7 +237,7 @@ function updateVoortgangsBalk(kampId) {
 
   deelnemers.forEach(d => {
     ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-      if (appData.keuzes[`${d.id}_${p}`]) ingevuld++;
+      if (appData.keuzes[`${d.id}_${p}`] !== undefined) ingevuld++;
     });
   });
 
@@ -261,36 +276,9 @@ window.opslaanKeuzes = async function() {
     await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
     showModal("Opgeslagen!", "Keuzes van de deelnemers zijn succesvol opgeslagen.");
     updateOverzicht();
+    updateStats();
   } catch (err) {
     showModal("Fout", "Kon niet opslaan in Firebase.");
-  }
-};
-
-// RESET KEUZES VAN HET HUIDIGE KAMP
-window.resetKeuzesVanKamp = async function() {
-  const kampId = document.getElementById('kampSelect').value;
-  if (!kampId) return;
-
-  const kamp = appData.deelkampen.find(k => k.id === kampId);
-  const bevestig = confirm(`Weet je zeker dat je alle gekozen activiteiten voor het kamp "${kamp ? kamp.naam : ''}" wilt resetten/wissen?`);
-
-  if (bevestig) {
-    const deelnemersInKamp = appData.deelnemers.filter(d => d.kampId === kampId);
-    
-    deelnemersInKamp.forEach(d => {
-      ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-        delete appData.keuzes[`${d.id}_${p}`];
-      });
-    });
-
-    try {
-      await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
-      renderDeelnemersFormulier(kampId);
-      updateOverzicht();
-      showModal("Reset Voltooid", `Alle keuzes voor "${kamp ? kamp.naam : ''}" zijn gewist.`);
-    } catch (err) {
-      showModal("Fout", "Kon keuzes niet resetten in Firebase.");
-    }
   }
 };
 
@@ -399,16 +387,43 @@ window.opslaanBeheerAanbodMulti = async function() {
   }
 };
 
+// RESET DAGAANBOD VOOR GESELECTEERDE KAMPEN IN BEHEER
+window.resetAanbodVanGeselecteerdeKampen = async function() {
+  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.beheer-kamp-cb:checked')).map(cb => cb.value);
+
+  if (geselecteerdeKampIds.length === 0) {
+    return showModal("Fout", "Selecteer eerst minstens één kamp om te resetten.");
+  }
+
+  const bevestig = confirm("Weet je zeker dat je het dagaanbod & capaciteiten voor de geselecteerde kampen wilt wissen?");
+  if (bevestig) {
+    for (const kampId of geselecteerdeKampIds) {
+      delete appData.periodeAanbod[kampId];
+      await set(ref(db, `topvakantie/periodeAanbod/${kampId}`), null);
+    }
+
+    onBeheerKampSelectionChange();
+    
+    const huidigKamp = document.getElementById('kampSelect').value;
+    if (huidigKamp && geselecteerdeKampIds.includes(huidigKamp)) {
+      renderDeelnemersFormulier(huidigKamp);
+    }
+
+    showModal("Reset Voltooid", "Het dagaanbod voor de geselecteerde kampen is gewist.");
+  }
+};
+
 window.resetAlleKeuzesGlobal = async function() {
-  const bevestig = confirm("WEET JE ZEKER dat je ALLE keuzes van ALLE kampen wilt wissen?");
+  const bevestig = confirm("WEET JE ZEKER dat je ALLE keuzes van ALLE deelnemers wilt wissen?");
   if (bevestig) {
     appData.keuzes = {};
     await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
-    
+
     const huidigKamp = document.getElementById('kampSelect').value;
     if (huidigKamp) renderDeelnemersFormulier(huidigKamp);
     updateOverzicht();
-    showModal("Reset Voltooid", "Alle keuzes van de hele database zijn gewist.");
+    updateStats();
+    showModal("Reset Voltooid", "Alle geselecteerde keuzes van alle deelnemers zijn gewist.");
   }
 };
 
@@ -427,6 +442,7 @@ window.verifieerWachtwoord = async function() {
     document.getElementById('beheerInhoud').style.display = 'grid';
     renderBeheerKampCheckboxes();
     renderBeheerLijsten();
+    updateStats();
   } else {
     showModal("Toegang Geweigerd", "Onjuist wachtwoord. Gebruik: topvakantie123");
   }
@@ -460,6 +476,7 @@ window.voegMasterActiviteitToe = async function() {
   await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
   input.value = '';
   renderBeheerLijsten();
+  updateStats();
   if (document.querySelectorAll('.beheer-kamp-cb:checked').length > 0) {
     onBeheerKampSelectionChange();
   }
@@ -480,6 +497,7 @@ window.voegKampToe = async function() {
   initApp();
   renderBeheerKampCheckboxes();
   renderBeheerLijsten();
+  updateStats();
   showModal("Succes", `Kamp "${naam}" toegevoegd!`);
 };
 
@@ -498,6 +516,7 @@ window.voegDeelnemerToe = async function() {
   input.value = '';
   initApp();
   renderBeheerLijsten();
+  updateStats();
   showModal("Succes", `Deelnemer "${naam}" toegevoegd!`);
 };
 
@@ -533,6 +552,7 @@ window.verwijderMasterAct = async function(id) {
   appData.masterActiviteiten = appData.masterActiviteiten.filter(a => a.id !== id);
   await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
   renderBeheerLijsten();
+  updateStats();
 };
 
 window.verwijderKamp = async function(id) {
@@ -541,6 +561,7 @@ window.verwijderKamp = async function(id) {
   initApp();
   renderBeheerKampCheckboxes();
   renderBeheerLijsten();
+  updateStats();
 };
 
 // 4. OVERZICHT & EXPORT
