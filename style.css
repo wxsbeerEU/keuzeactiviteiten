@@ -28,19 +28,23 @@ body {
   background-color: var(--bg);
   color: var(--text);
   margin: 0;
-  padding: 24px 16px;
+  padding: 0 0 32px 0;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
-.app-container { max-width: 1200px; margin: 0 auto; }
+.app-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
 
-/* Header Brand met Logo */
+/* Header Banner - Volle breedte met geïntegreerde tabs */
 .app-header {
   background: linear-gradient(135deg, #70b22a 0%, #8bc53f 100%);
   color: white;
-  padding: 20px 28px;
-  border-radius: var(--radius-lg);
+  padding: 16px 30px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
@@ -48,31 +52,29 @@ body {
   box-shadow: 0 6px 20px rgba(112, 178, 42, 0.22);
 }
 
-.header-brand {
+.header-left {
   display: flex;
   align-items: center;
   gap: 20px;
 }
 
+/* Logo ZONDER BOX: groter en direct transparant op achtergrond */
 .brand-logo-container {
-  background: white;
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
+  background: transparent;
+  padding: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .brand-logo {
-  max-height: 48px;
+  height: 64px;
   width: auto;
   object-fit: contain;
 }
 
 .brand-title {
   margin: 0 0 2px 0;
-  font-size: 1.75rem;
+  font-size: 1.7rem;
   font-weight: 800;
   color: white;
   letter-spacing: -0.02em;
@@ -81,52 +83,65 @@ body {
 .brand-subtitle {
   margin: 0;
   opacity: 0.95;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 500;
+}
+
+.badge-container {
+  display: flex;
+  align-items: center;
 }
 
 .badge {
   background: var(--secondary);
   color: white;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 30px;
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   box-shadow: 0 2px 8px rgba(0, 75, 135, 0.25);
 }
 
-/* Navigatie Tabs met SVG iconen */
-.nav-tabs {
+/* Navigatie Tabs Rechts in de Header */
+.nav-tabs-header {
   display: flex;
-  gap: 10px;
-  margin-bottom: 24px;
-  border-bottom: 3px solid var(--border);
-  padding-bottom: 2px;
+  gap: 8px;
+  align-items: center;
 }
 
 .tab-btn {
-  background: transparent;
-  border: none;
-  padding: 14px 22px;
-  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 10px 18px;
+  font-size: 0.92rem;
   font-weight: 700;
-  color: #556b2f;
+  color: white;
   cursor: pointer;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border-radius: var(--radius-sm);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  backdrop-filter: blur(4px);
 }
 
 .nav-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   fill: currentColor;
 }
 
-.tab-btn:hover { color: var(--secondary); background: rgba(112, 178, 42, 0.08); }
-.tab-btn.active { color: var(--secondary); border-bottom: 4px solid var(--primary); background: white; box-shadow: var(--shadow-sm); }
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
+}
+
+.tab-btn.active {
+  color: var(--secondary);
+  background: white;
+  border-color: white;
+  box-shadow: var(--shadow-md);
+}
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
@@ -141,7 +156,7 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.selector-card { display: flex; align-items: center; gap: 20px; }
+.selector-card { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 
 .form-label { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; font-size: 0.98rem; color: var(--text); }
 .label-hint { font-size: 0.84rem; color: var(--text-muted); font-weight: 500; }
@@ -195,12 +210,7 @@ body {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
 }
 
-.btn-svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-}
-
+.btn-svg { width: 18px; height: 18px; fill: currentColor; }
 .btn-shadow { box-shadow: 0 4px 12px rgba(112, 178, 42, 0.25); }
 .btn-sm { padding: 7px 14px; font-size: 0.86rem; }
 .btn-primary { background: var(--primary); color: white; }
@@ -361,11 +371,12 @@ body {
 .modal-body p { margin: 0; color: var(--text); font-size: 0.98rem; }
 .modal-actions { text-align: right; margin-top: 24px; }
 
-@media (max-width: 900px) {
-  .periodes-grid, .periodes-aanbod-grid, .stats-grid, .admin-grid { grid-template-columns: 1fr 1fr; }
+@media (max-width: 980px) {
+  .app-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .nav-tabs-header { width: 100%; justify-content: flex-start; }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .periodes-grid, .periodes-aanbod-grid, .stats-grid, .admin-grid, .admin-grid-inner { grid-template-columns: 1fr; }
-  .app-header { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .nav-tabs-header { flex-wrap: wrap; }
 }
