@@ -187,7 +187,7 @@ select:focus, input:focus {
 
 .periode-box select { width: 100%; font-size: 0.88rem; }
 
-/* TAB 2: OVERZICHT PER ACTIVITEIT GRID (HERSTELD & GEOPTIMALISEERD) */
+/* TAB 2: OVERZICHT PER ACTIVITEIT GRID */
 .overzicht-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -229,7 +229,7 @@ select:focus, input:focus {
   border: 1px solid #cce2b5;
 }
 
-/* TAB 3: BEHEERPANEEL GRID & INSTELLINGEN (VOLLE BREEDTE FIX) */
+/* TAB 3: BEHEERPANEEL GRID */
 .admin-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -316,6 +316,18 @@ select:focus, input:focus {
 .help-text { font-size: 0.9rem; color: #64748b; margin-top: -4px; }
 .max-width-center { max-width: 420px; margin: 40px auto; }
 .empty-state { text-align: center; padding: 40px; background: white; border-radius: 12px; color: #64748b; border: 2px dashed var(--border); }
+
+/* Print styling */
+.print-only { display: none; }
+
+@media print {
+  body { background: white; color: black; padding: 0; }
+  .container { display: none !important; }
+  .print-only { display: block !important; }
+  .print-period-header { font-size: 1.6rem; font-weight: bold; border-bottom: 3px solid #004b87; margin-top: 25px; padding-bottom: 5px; color: #004b87; }
+  .print-act-title { font-size: 1.2rem; font-weight: bold; margin-top: 15px; color: #70b22a; }
+  .print-names-list { margin-left: 20px; margin-bottom: 15px; }
+}
 
 /* Modal */
 .modal-backdrop {
