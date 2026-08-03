@@ -27,10 +27,8 @@
     <button class="tab-btn" onclick="openTab('beheer')">⚙️ Beheer & Data 🔒</button>
   </nav>
 
-  <!-- TAB 1: KEUZES INVOEREN PER DEELNEMER -->
+  <!-- TAB 1: KEUZES INVOEREN -->
   <div id="tab-selectie" class="tab-content active">
-    
-    <!-- KAMP SELECTOR -->
     <div class="card selector-card">
       <div class="form-group flex-grow">
         <label for="kampSelect"><strong>Kies het Deelkamp:</strong></label>
@@ -78,7 +76,7 @@
 
   <!-- TAB 2: OVERZICHT PER ACTIVITEIT -->
   <div id="tab-overzicht" class="tab-content">
-    <div class="card selector-card">
+    <div class="card selector-card margin-bottom">
       <div class="form-group flex-grow">
         <label for="overzichtKampSelect"><strong>Filter op Kamp:</strong></label>
         <select id="overzichtKampSelect" onchange="updateOverzicht()">
@@ -87,7 +85,7 @@
       </div>
     </div>
 
-    <div id="overzichtContainer"></div>
+    <div id="overzichtContainer" class="overzicht-grid"></div>
   </div>
 
   <!-- TAB 3: BEHEER & DATA (BEVEILIGD) -->
@@ -107,7 +105,7 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
-      <!-- STATISTIEKEN BENT -->
+      <!-- STATISTIEKEN (VOLLE BREEDTE) -->
       <div class="card full-width bg-stats">
         <div class="stats-grid">
           <div class="stat-box">
@@ -129,7 +127,7 @@
         </div>
       </div>
 
-      <!-- 1. DAGAANBOD & CAPACITEIT -->
+      <!-- 1. DAGAANBOD & CAPACITEIT (VOLLE BREEDTE) -->
       <div class="card full-width">
         <div class="card-header">
           <h3>1. Dagaanbod & Max. Capaciteit Instellen</h3>
