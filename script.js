@@ -342,6 +342,7 @@ window.onKeuzeChange = function(kampId) {
   renderDeelnemersFormulier(kampId);
 };
 
+// ROBUUSTE OPSLAG NAAR FIREBASE
 window.opslaanKeuzes = async function() {
   const selects = document.querySelectorAll('select[data-deelnemer]');
 
@@ -355,10 +356,10 @@ window.opslaanKeuzes = async function() {
     }
   });
 
-  // Schoon alle ongedefinieerde/lege keuzes op voor opslag
+  // Schoon alle ongedefinieerde/lege keuzes op
   const schoneKeuzes = {};
   Object.keys(appData.keuzes).forEach(k => {
-    if (appData.keuzes[k] && appData.keuzes[k] !== 'unselected') {
+    if (appData.keuzes[k] && appData.keuzes[k] !== 'unselected' && appData.keuzes[k] !== 'geen') {
       schoneKeuzes[k] = appData.keuzes[k];
     }
   });
@@ -490,7 +491,7 @@ window.importeerDeelnemersCSV = function() {
     const lijnen = text.split(/\r\n|\n/);
     let toegevoegdAantal = 0;
 
-    lijnen.forEach(lijn => {
+    lijnen.forEach((lijn, index) => {
       if (!lijn.trim()) return;
       const delen = lijn.split(',');
       const naam = delen[0].replace(/"/g, '').trim();
@@ -505,7 +506,8 @@ window.importeerDeelnemersCSV = function() {
         }
 
         if (doelKampId) {
-          appData.deelnemers.push({ id: `d-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, naam: naam, kampId: doelKampId });
+          const uniekId = `d-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 4)}`;
+          appData.deelnemers.push({ id: uniekId, naam: naam, kampId: doelKampId });
           toegevoegdAantal++;
         }
       }
@@ -514,7 +516,7 @@ window.importeerDeelnemersCSV = function() {
     if (toegevoegdAantal > 0) {
       appData.deelnemers = sorteerOpNaam(appData.deelnemers);
       await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
-      initApp();
+      vulDropdowns();
       renderBeheerLijsten();
       updateStats();
       showModal("Import Succesvol", `${toegevoegdAantal} deelnemers geïmporteerd!`);
@@ -669,7 +671,7 @@ window.voegKampToe = async function() {
 
   await set(ref(db, 'topvakantie/deelkampen'), appData.deelkampen);
   input.value = '';
-  initApp();
+  vulDropdowns();
   renderBeheerKampCheckboxes();
   renderBeheerLijsten();
   updateStats();
@@ -689,7 +691,8 @@ window.voegDeelnemerToe = async function() {
 
   await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
   input.value = '';
-  initApp();
+  
+  // Update de schermen veilig zonder het hoofdscherm te laten springen/flipperen
   renderBeheerLijsten();
   updateStats();
   showModal("Succes", `Deelnemer "${naam}" toegevoegd!`);
@@ -698,6 +701,13 @@ window.voegDeelnemerToe = async function() {
 function renderBeheerLijsten() {
   const container = document.getElementById('beheerLijstContainer');
   if (!container) return;
+
+  const filterZoek = document.getElementById('beheerDeelnemerZoekInput')?.value.toLowerCase().trim() || '';
+  let gefilterdeDeelnemers = appData.deelnemers;
+
+  if (filterZoek) {
+    gefilterdeDeelnemers = gefilterdeDeelnemers.filter(d => d.naam && d.naam.toLowerCase().includes(filterZoek));
+  }
 
   let html = `
     <h4>Totale Master Activiteiten Database (${appData.masterActiviteiten.length})</h4>
@@ -721,9 +731,51 @@ function renderBeheerLijsten() {
         </tr>
       `).join('')}
     </table>
+
+    <div class="flex-between margin-top align-items-center">
+      <h4 style="margin:0;">Deelnemers Beheren & Wissen (${appData.deelnemers.length})</h4>
+      <input type="text" id="beheerDeelnemerZoekInput" class="form-control table-filter-input" placeholder="🔍 Zoek deelnemer in beheer..." value="${filterZoek}" oninput="renderBeheerLijsten()">
+    </div>
+    <table class="admin-table">
+      <tr><th>Naam Deelnemer</th><th>Kamp</th><th>Actie</th></tr>
+      ${gefilterdeDeelnemers.slice(0, 100).map(d => {
+        const kamp = appData.deelkampen.find(k => k.id === d.kampId);
+        return `
+          <tr>
+            <td><strong>${d.naam}</strong></td>
+            <td>${kamp ? kamp.naam : 'Geen kamp'}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="verwijderDeelnemer('${d.id}')">Wissen</button></td>
+          </tr>
+        `;
+      }).join('')}
+    </table>
+    ${gefilterdeDeelnemers.length > 100 ? `<p class="help-text margin-top-sm">Getoond: eerste 100 resultaten. Gebruik de zoekbalk voor meer.</p>` : ''}
   `;
   container.innerHTML = html;
 }
+
+window.verwijderDeelnemer = async function(id) {
+  const d = appData.deelnemers.find(x => x.id === id);
+  const bevestig = confirm(`Weet je zeker dat je deelnemer "${d ? d.naam : ''}" wilt verwijderen uit de database?`);
+  
+  if (bevestig) {
+    appData.deelnemers = appData.deelnemers.filter(a => a.id !== id);
+    
+    ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
+      delete appData.keuzes[`${id}_${p}`];
+    });
+
+    await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
+    await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
+
+    const huidigKamp = document.getElementById('kampSelect')?.value;
+    if (huidigKamp) renderDeelnemersFormulier(huidigKamp);
+
+    renderBeheerLijsten();
+    updateStats();
+    showModal("Verwijderd", "Deelnemer is verwijderd uit de database.");
+  }
+};
 
 window.verwijderMasterAct = async function(id) {
   appData.masterActiviteiten = appData.masterActiviteiten.filter(a => a.id !== id);
@@ -735,7 +787,7 @@ window.verwijderMasterAct = async function(id) {
 window.verwijderKamp = async function(id) {
   appData.deelkampen = appData.deelkampen.filter(k => k.id !== id);
   await set(ref(db, 'topvakantie/deelkampen'), appData.deelkampen);
-  initApp();
+  vulDropdowns();
   renderBeheerKampCheckboxes();
   renderBeheerLijsten();
   updateStats();
@@ -954,7 +1006,9 @@ window.openTab = function(tabName) {
 
   const tabElem = document.getElementById(`tab-${tabName}`);
   if (tabElem) tabElem.classList.add('active');
-  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  
+  const btnElem = document.getElementById(`btn-tab-${tabName}`);
+  if (btnElem) btnElem.classList.add('active');
 };
 
 function showModal(title, msg) {
