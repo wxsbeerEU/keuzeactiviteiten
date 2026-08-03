@@ -87,6 +87,36 @@ header {
 .flex-grow { flex-grow: 1; }
 .margin-top-sm { margin-top: 8px; }
 
+/* Dashboard Statistieken */
+.bg-light-green { background: #f0f7e8 !important; border-color: #cce2b5 !important; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  text-align: center;
+}
+
+.stat-box {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.stat-num {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--secondary);
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
 /* Voortgangsbalk & Zoekbalk */
 .progress-card {
   background: white;
@@ -151,6 +181,7 @@ select:focus, input:focus {
   transition: all 0.2s;
 }
 
+.btn-group { display: flex; gap: 12px; flex-wrap: wrap; }
 .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-hover); }
