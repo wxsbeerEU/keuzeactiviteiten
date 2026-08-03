@@ -35,8 +35,27 @@ async function hashWachtwoord(wachtwoord) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Veilige sorteerfunctie (voorkomt crashes bij ongeldige of lege namen)
 function sorteerOpNaam(array) {
-  return array.sort((a, b) => a.naam.localeCompare(b.naam, 'nl', { sensitivity: 'base' }));
+  if (!Array.isArray(array)) return [];
+  return array.filter(item => item && item.naam).sort((a, b) => {
+    const naamA = String(a.naam || '');
+    const naamB = String(b.naam || '');
+    return naamA.localeCompare(naamB, 'nl', { sensitivity: 'base' });
+  });
+}
+
+// Zorg ervoor dat data altijd een Array is, ook als Firebase het als Object opslaat
+function converteerNaarArray(data) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data.filter(Boolean);
+  return Object.keys(data).map(key => {
+    const val = data[key];
+    if (typeof val === 'object' && val !== null) {
+      return { id: val.id || key, ...val };
+    }
+    return null;
+  }).filter(Boolean);
 }
 
 async function laadFirebaseData() {
@@ -44,24 +63,21 @@ async function laadFirebaseData() {
   try {
     const snapshot = await get(child(dbRef, 'topvakantie'));
     if (snapshot.exists()) {
-      appData = snapshot.val();
-      if (!appData.deelkampen) appData.deelkampen = [];
-      if (!appData.deelnemers) appData.deelnemers = [];
-      if (!appData.masterActiviteiten) appData.masterActiviteiten = [];
-      if (!appData.periodeAanbod) appData.periodeAanbod = {};
-      if (!appData.keuzes) appData.keuzes = {};
-      if (!appData.adminHash) appData.adminHash = STANDAARD_HASH;
-
-      appData.deelkampen = sorteerOpNaam(appData.deelkampen);
-      appData.deelnemers = sorteerOpNaam(appData.deelnemers);
-      appData.masterActiviteiten = sorteerOpNaam(appData.masterActiviteiten);
+      const rawData = snapshot.val();
+      
+      appData.deelkampen = sorteerOpNaam(converteerNaarArray(rawData.deelkampen));
+      appData.deelnemers = sorteerOpNaam(converteerNaarArray(rawData.deelnemers));
+      appData.masterActiviteiten = sorteerOpNaam(converteerNaarArray(rawData.masterActiviteiten));
+      appData.periodeAanbod = rawData.periodeAanbod || {};
+      appData.keuzes = rawData.keuzes || {};
+      appData.adminHash = rawData.adminHash || STANDAARD_HASH;
     } else {
       await set(ref(db, 'topvakantie'), appData);
     }
     initApp();
   } catch (error) {
-    console.error(error);
-    showModal("Fout", "Kon geen verbinding maken met Firebase.");
+    console.error("Firebase Laad Fout:", error);
+    showModal("Fout bij laden", "Kon geen verbinding maken met de database. Controleer de internetverbinding.");
   }
 }
 
@@ -77,31 +93,39 @@ function vulDropdowns() {
   const nieuwDeelnemerKamp = document.getElementById('nieuwDeelnemerKamp');
   const csvStandaardKampSelect = document.getElementById('csvStandaardKampSelect');
 
-  kampSelect.innerHTML = '<option value="">-- Selecteer een Deelkamp --</option>';
-  overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen --</option>';
-  nieuwDeelnemerKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
-  csvStandaardKampSelect.innerHTML = '<option value="">-- Uit CSV Lezen --</option>';
+  if (kampSelect) kampSelect.innerHTML = '<option value="">-- Selecteer een Deelkamp --</option>';
+  if (overzichtSelect) overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen --</option>';
+  if (nieuwDeelnemerKamp) nieuwDeelnemerKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
+  if (csvStandaardKampSelect) csvStandaardKampSelect.innerHTML = '<option value="">-- Uit CSV Lezen --</option>';
 
   appData.deelkampen.forEach(kamp => {
     const opt = `<option value="${kamp.id}">${kamp.naam}</option>`;
-    kampSelect.innerHTML += opt;
-    overzichtSelect.innerHTML += opt;
-    nieuwDeelnemerKamp.innerHTML += opt;
-    csvStandaardKampSelect.innerHTML += opt;
+    if (kampSelect) kampSelect.innerHTML += opt;
+    if (overzichtSelect) overzichtSelect.innerHTML += opt;
+    if (nieuwDeelnemerKamp) nieuwDeelnemerKamp.innerHTML += opt;
+    if (csvStandaardKampSelect) csvStandaardKampSelect.innerHTML += opt;
   });
 }
 
 function updateStats() {
   if (!isAdminIngelogd) return;
-  document.getElementById('statKampen').textContent = appData.deelkampen.length;
-  document.getElementById('statDeelnemers').textContent = appData.deelnemers.length;
-  document.getElementById('statMasterAct').textContent = appData.masterActiviteiten.length;
-  document.getElementById('statKeuzes').textContent = Object.keys(appData.keuzes).length;
+  const statKampen = document.getElementById('statKampen');
+  const statDeelnemers = document.getElementById('statDeelnemers');
+  const statMasterAct = document.getElementById('statMasterAct');
+  const statKeuzes = document.getElementById('statKeuzes');
+
+  if (statKampen) statKampen.textContent = appData.deelkampen.length;
+  if (statDeelnemers) statDeelnemers.textContent = appData.deelnemers.length;
+  if (statMasterAct) statMasterAct.textContent = appData.masterActiviteiten.length;
+  if (statKeuzes) statKeuzes.textContent = Object.keys(appData.keuzes).length;
 }
 
 // 1. KEUZES INVOEREN
 window.onKampChange = function() {
-  const kampId = document.getElementById('kampSelect').value;
+  const kampSelect = document.getElementById('kampSelect');
+  if (!kampSelect) return;
+  const kampId = kampSelect.value;
+  
   const container = document.getElementById('deelnemersContainer');
   const actionsBar = document.getElementById('actionsBar');
   const selectieHeader = document.getElementById('selectieHeader');
@@ -110,17 +134,17 @@ window.onKampChange = function() {
   container.innerHTML = '';
 
   if (!kampId) {
-    actionsBar.style.display = 'none';
-    selectieHeader.style.display = 'none';
-    badge.textContent = 'Selecteer een kamp';
+    if (actionsBar) actionsBar.style.display = 'none';
+    if (selectieHeader) selectieHeader.style.display = 'none';
+    if (badge) badge.textContent = 'Selecteer een kamp';
     container.innerHTML = '<div class="empty-state"><p>Kies hierboven een deelkamp om te beginnen.</p></div>';
     return;
   }
 
   const kamp = appData.deelkampen.find(k => k.id === kampId);
-  badge.textContent = kamp ? kamp.naam : 'Selecteer een kamp';
-  actionsBar.style.display = 'flex';
-  selectieHeader.style.display = 'block';
+  if (badge) badge.textContent = kamp ? kamp.naam : 'Selecteer een kamp';
+  if (actionsBar) actionsBar.style.display = 'flex';
+  if (selectieHeader) selectieHeader.style.display = 'block';
 
   renderDeelnemersFormulier(kampId);
 };
@@ -152,13 +176,13 @@ function renderDeelnemersFormulier(kampId) {
 
   const zoekTerm = document.getElementById('deelnemerZoekInput')?.value.toLowerCase().trim() || '';
   if (zoekTerm) {
-    deelnemers = deelnemers.filter(d => d.naam.toLowerCase().includes(zoekTerm));
+    deelnemers = deelnemers.filter(d => d.naam && d.naam.toLowerCase().includes(zoekTerm));
   }
 
   updateVoortgangsBalk(kampId);
 
   if (deelnemers.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>Geen deelnemers gevonden.</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>Geen deelnemers gevonden voor dit kamp. Voeg ze toe via "Beheer & Data".</p></div>';
     return;
   }
 
@@ -243,8 +267,12 @@ function updateVoortgangsBalk(kampId) {
   });
 
   const percentage = totaalKeuzes > 0 ? Math.round((ingevuld / totaalKeuzes) * 100) : 0;
-  document.getElementById('progressText').textContent = `${ingevuld} / ${totaalKeuzes} keuzes ingevuld (${percentage}%)`;
-  document.getElementById('progressBarFill').style.width = `${percentage}%`;
+  
+  const textElem = document.getElementById('progressText');
+  const fillElem = document.getElementById('progressBarFill');
+
+  if (textElem) textElem.textContent = `${ingevuld} / ${totaalKeuzes} keuzes ingevuld (${percentage}%)`;
+  if (fillElem) fillElem.style.width = `${percentage}%`;
 }
 
 window.filterDeelnemersLijst = function() {
@@ -312,10 +340,11 @@ window.resetKeuzesVanKamp = async function() {
 // 2. BEHEER: CHECKBOXES AANBOD & CSV IMPORT
 function renderBeheerKampCheckboxes() {
   const grid = document.getElementById('beheerKampCheckboxesGrid');
+  if (!grid) return;
   grid.innerHTML = '';
 
   if (appData.deelkampen.length === 0) {
-    grid.innerHTML = '<em>Nog geen deelkampen aangemaakt.</em>';
+    grid.innerHTML = '<em>Nog geen deelkampen aangemaakt. Voeg ze hieronder toe.</em>';
     return;
   }
 
@@ -339,17 +368,19 @@ window.onBeheerKampSelectionChange = function() {
   const panel = document.getElementById('beheerAanbodPanel');
 
   if (geselecteerdeKampIds.length === 0) {
-    panel.style.display = 'none';
+    if (panel) panel.style.display = 'none';
     return;
   }
 
-  panel.style.display = 'block';
+  if (panel) panel.style.display = 'block';
   const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
   const primairKampId = geselecteerdeKampIds[0];
   const primairAanbod = appData.periodeAanbod[primairKampId] || {};
 
   periodes.forEach(p => {
     const box = document.getElementById(`beheer-aanbod-${p}`);
+    if (!box) return;
+
     const geselecteerdeItems = primairAanbod[p] || [];
 
     if (appData.masterActiviteiten.length === 0) {
@@ -369,7 +400,7 @@ window.onBeheerKampSelectionChange = function() {
             <strong>${act.naam}</strong>
           </div>
           <div class="max-input-group">
-            <label>Max. pers. (0 = $\infty$):</label>
+            <label>Max. pers. (0 = ∞):</label>
             <input type="number" min="0" class="max-beheer-${p}" data-act="${act.id}" value="${maxVal}">
           </div>
         </div>
@@ -409,7 +440,7 @@ window.importeerDeelnemersCSV = function() {
         }
 
         if (doelKampId) {
-          appData.deelnemers.push({ id: Date.now() + Math.random(), naam: naam, kampId: doelKampId });
+          appData.deelnemers.push({ id: `d-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, naam: naam, kampId: doelKampId });
           toegevoegdAantal++;
         }
       }
@@ -424,7 +455,7 @@ window.importeerDeelnemersCSV = function() {
       showModal("Import Succesvol", `${toegevoegdAantal} deelnemers geïmporteerd!`);
       fileInput.value = '';
     } else {
-      showModal("Fout", "Geen geldige deelnemers gevonden of kamp niet herkend.");
+      showModal("Fout", "Geen geldige deelnemers gevonden of gekoppeld kamp niet herkend.");
     }
   };
 
@@ -587,7 +618,7 @@ window.voegDeelnemerToe = async function() {
 
   if (!naam || !kampId) return showModal("Fout", "Vul een naam in en kies een kamp.");
 
-  const nieuw = { id: Date.now(), naam: naam, kampId: kampId };
+  const nieuw = { id: `d-${Date.now()}`, naam: naam, kampId: kampId };
   appData.deelnemers.push(nieuw);
   appData.deelnemers = sorteerOpNaam(appData.deelnemers);
 
@@ -601,6 +632,8 @@ window.voegDeelnemerToe = async function() {
 
 function renderBeheerLijsten() {
   const container = document.getElementById('beheerLijstContainer');
+  if (!container) return;
+
   let html = `
     <h4>Totale Master Activiteiten Database (${appData.masterActiviteiten.length})</h4>
     <table class="admin-table">
@@ -643,10 +676,11 @@ window.verwijderKamp = async function(id) {
   updateStats();
 };
 
-// 4. OVERZICHT (Secties alleen als er inschrijvingen/keuzes zijn)
+// 4. OVERZICHT & EXPORT (ENKEL SECTIES WANNEER KEUZES BESTAAN)
 window.updateOverzicht = function() {
   const filterKamp = document.getElementById('overzichtKampSelect').value;
   const container = document.getElementById('overzichtContainer');
+  if (!container) return;
   container.innerHTML = '';
 
   const periodes = [
@@ -685,7 +719,6 @@ window.updateOverzicht = function() {
       }
     });
 
-    // Toon het tijdsblok ALLEEN als er daadwerkelijk inschrijvingen zijn!
     if (aantalInscriptiesInPeriode > 0) {
       const sectie = document.createElement('div');
       sectie.className = 'tijdsstip-sectie';
@@ -702,7 +735,6 @@ window.updateOverzicht = function() {
   }
 };
 
-// EXPORT CSV - GEAANDUID PER TIJDSSTIP, ACTIVITEIT EN NAMEN
 window.exportCSV = function() {
   const filterKamp = document.getElementById('kampSelect').value;
   let csv = `TIJDSSTIP,ACTIVITEIT,DEELNEMER,KAMP\n`;
@@ -738,7 +770,6 @@ window.exportCSV = function() {
   link.click();
 };
 
-// HERSTRUCTUREER PRINT WEERGAVE
 window.onbeforeprint = function() {
   const printContainer = document.getElementById('printContainer');
   const filterKamp = document.getElementById('kampSelect').value;
@@ -786,18 +817,24 @@ window.openTab = function(tabName) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-  document.getElementById(`tab-${tabName}`).classList.add('active');
-  event.currentTarget.classList.add('active');
+  const tabElem = document.getElementById(`tab-${tabName}`);
+  if (tabElem) tabElem.classList.add('active');
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
 };
 
 function showModal(title, msg) {
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalMessage').textContent = msg;
-  document.getElementById('customModal').style.display = 'flex';
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  const customModal = document.getElementById('customModal');
+
+  if (modalTitle) modalTitle.textContent = title;
+  if (modalMessage) modalMessage.textContent = msg;
+  if (customModal) customModal.style.display = 'flex';
 }
 
 window.closeModal = function() {
-  document.getElementById('customModal').style.display = 'none';
+  const customModal = document.getElementById('customModal');
+  if (customModal) customModal.style.display = 'none';
 };
 
 laadFirebaseData();
