@@ -129,7 +129,7 @@ function berekenAantallen(kampId) {
   deelnemersInKamp.forEach(d => {
     ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
       const actId = appData.keuzes[`${d.id}_${p}`];
-      if (actId && actId !== 'geen') {
+      if (actId && actId !== 'geen' && actId !== 'unselected') {
         const sleutel = `${p}_${actId}`;
         aantallen[sleutel] = (aantallen[sleutel] || 0) + 1;
       }
@@ -178,12 +178,18 @@ function renderDeelnemersFormulier(kampId) {
     periodes.forEach(p => {
       const toegestaneItems = kampAanbod[p.id] || [];
       const key = `${d.id}_${p.id}`;
-      const geselecteerdActId = appData.keuzes[key] !== undefined ? appData.keuzes[key] : 'geen';
-
-      if (appData.keuzes[key] !== undefined) ingevuldePeriodes++;
-
-      let options = `<option value="geen" ${geselecteerdActId === 'geen' ? 'selected' : ''}>-- Geen --</option>`;
       
+      // Standaard 'unselected' tenzij opgeslagen als 'geen' of een activiteit ID
+      const geselecteerdActId = appData.keuzes[key] !== undefined ? appData.keuzes[key] : 'unselected';
+
+      // Enkel een expliciete keuze ('geen' of een activiteit ID) telt mee als ingevuld
+      if (geselecteerdActId && geselecteerdActId !== 'unselected') {
+        ingevuldePeriodes++;
+      }
+
+      let options = `<option value="unselected" ${geselecteerdActId === 'unselected' ? 'selected' : ''}>-- Kies Activiteit --</option>`;
+      options += `<option value="geen" ${geselecteerdActId === 'geen' ? 'selected' : ''}>-- Geen Activiteit --</option>`;
+
       const mogelijkeMasterAct = appData.masterActiviteiten.filter(a => toegestaneItems.some(item => item.actId === a.id));
       sorteerOpNaam(mogelijkeMasterAct);
 
@@ -231,7 +237,8 @@ function updateVoortgangsBalk(kampId) {
 
   deelnemers.forEach(d => {
     ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-      if (appData.keuzes[`${d.id}_${p}`] !== undefined) ingevuld++;
+      const val = appData.keuzes[`${d.id}_${p}`];
+      if (val && val !== 'unselected') ingevuld++;
     });
   });
 
@@ -583,7 +590,7 @@ window.verwijderKamp = async function(id) {
   updateStats();
 };
 
-// 4. OVERZICHT & EXPORT (GRID LAYOUT HERSTELD)
+// 4. OVERZICHT & EXPORT (INGEDEELD PER TIJDSSTIP)
 window.updateOverzicht = function() {
   const filterKamp = document.getElementById('overzichtKampSelect').value;
   const container = document.getElementById('overzichtContainer');
@@ -624,26 +631,84 @@ window.updateOverzicht = function() {
   }
 };
 
+// EXPORT CSV - GESTRUCTUREERD PER TIJDSSTIP DAN ACTIVITEIT DAN NAMEN
 window.exportCSV = function() {
-  let csv = `Deelnemer,Kamp,Voormiddag,Namiddag 1,Namiddag 2,Avond\n`;
-  const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
+  const filterKamp = document.getElementById('kampSelect').value;
+  let csv = `TIJDSSTIP,ACTIVITEIT,DEELNEMER,KAMP\n`;
 
-  deelnemersLijst.forEach(d => {
-    const kamp = appData.deelkampen.find(k => k.id === d.kampId);
-    const getActNaam = (p) => {
-      const actId = appData.keuzes[`${d.id}_${p}`];
-      if (!actId || actId === 'geen') return 'Geen';
-      const act = appData.masterActiviteiten.find(a => a.id === actId);
-      return act ? `"${act.naam}"` : 'Geen';
-    };
-    csv += `"${d.naam}","${kamp ? kamp.naam : ''}",${getActNaam('voormiddag')},${getActNaam('namiddag1')},${getActNaam('namiddag2')},${getActNaam('avond')}\n`;
+  const periodes = [
+    { id: 'voormiddag', label: 'Voormiddag' },
+    { id: 'namiddag1', label: 'Namiddag 1' },
+    { id: 'namiddag2', label: 'Namiddag 2' },
+    { id: 'avond', label: 'Avond' }
+  ];
+
+  periodes.forEach(p => {
+    appData.masterActiviteiten.forEach(act => {
+      const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
+      const ingeschreven = deelnemersLijst.filter(d => {
+        const isKampMatch = !filterKamp || d.kampId === filterKamp;
+        return isKampMatch && appData.keuzes[`${d.id}_${p.id}`] === act.id;
+      });
+
+      if (ingeschreven.length > 0) {
+        ingeschreven.forEach(d => {
+          const kamp = appData.deelkampen.find(k => k.id === d.kampId);
+          csv += `"${p.label}","${act.naam}","${d.naam}","${kamp ? kamp.naam : ''}"\n`;
+        });
+      }
+    });
   });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `Topvakantie_Keuzes.csv`;
+  link.download = `Topvakantie_Lijst_Per_Tijdsstip.csv`;
   link.click();
+};
+
+// HERSTRUCTUREER PRINT WEERGAVE (VOOR WINDOW.PRINT)
+window.onbeforeprint = function() {
+  const printContainer = document.getElementById('printContainer');
+  const filterKamp = document.getElementById('kampSelect').value;
+
+  let html = `<h2>Topvakantie Keuzeactiviteiten - Overzicht per Tijdsstip</h2>`;
+
+  const periodes = [
+    { id: 'voormiddag', label: 'Voormiddag' },
+    { id: 'namiddag1', label: 'Namiddag 1' },
+    { id: 'namiddag2', label: 'Namiddag 2' },
+    { id: 'avond', label: 'Avond' }
+  ];
+
+  periodes.forEach(p => {
+    html += `<div class="print-period-header">${p.label}</div>`;
+    let heeftActiviteiten = false;
+
+    appData.masterActiviteiten.forEach(act => {
+      const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
+      const ingeschreven = deelnemersLijst.filter(d => {
+        const isKampMatch = !filterKamp || d.kampId === filterKamp;
+        return isKampMatch && appData.keuzes[`${d.id}_${p.id}`] === act.id;
+      });
+
+      if (ingeschreven.length > 0) {
+        heeftActiviteiten = true;
+        html += `
+          <div class="print-act-title">${act.naam} (${ingeschreven.length} deelnemers)</div>
+          <ol class="print-names-list">
+            ${ingeschreven.map(d => `<li>${d.naam}</li>`).join('')}
+          </ol>
+        `;
+      }
+    });
+
+    if (!heeftActiviteiten) {
+      html += `<p style="margin-left: 10px; font-style: italic;">Geen inschrijvingen voor deze periode.</p>`;
+    }
+  });
+
+  printContainer.innerHTML = html;
 };
 
 window.openTab = function(tabName) {
