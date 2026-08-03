@@ -35,7 +35,6 @@ async function hashWachtwoord(wachtwoord) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Veilige sorteerfunctie (voorkomt crashes bij ongeldige of lege namen)
 function sorteerOpNaam(array) {
   if (!Array.isArray(array)) return [];
   return array.filter(item => item && item.naam).sort((a, b) => {
@@ -45,7 +44,6 @@ function sorteerOpNaam(array) {
   });
 }
 
-// Zorg ervoor dat data altijd een Array is, ook als Firebase het als Object opslaat
 function converteerNaarArray(data) {
   if (!data) return [];
   if (Array.isArray(data)) return data.filter(Boolean);
@@ -94,7 +92,7 @@ function vulDropdowns() {
   const csvStandaardKampSelect = document.getElementById('csvStandaardKampSelect');
 
   if (kampSelect) kampSelect.innerHTML = '<option value="">-- Selecteer een Deelkamp --</option>';
-  if (overzichtSelect) overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen --</option>';
+  if (overzichtSelect) overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen Samen --</option>';
   if (nieuwDeelnemerKamp) nieuwDeelnemerKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
   if (csvStandaardKampSelect) csvStandaardKampSelect.innerHTML = '<option value="">-- Uit CSV Lezen --</option>';
 
@@ -137,14 +135,20 @@ window.onKampChange = function() {
     if (actionsBar) actionsBar.style.display = 'none';
     if (selectieHeader) selectieHeader.style.display = 'none';
     if (badge) badge.textContent = 'Selecteer een kamp';
-    container.innerHTML = '<div class="empty-state"><p>Kies hierboven een deelkamp om te beginnen.</p></div>';
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⛺</div>
+        <h3>Geen Deelkamp Geselecteerd</h3>
+        <p>Kies hierboven een deelkamp om de lijst van deelnemers te openen en hun keuzes in te voeren.</p>
+      </div>
+    `;
     return;
   }
 
   const kamp = appData.deelkampen.find(k => k.id === kampId);
   if (badge) badge.textContent = kamp ? kamp.naam : 'Selecteer een kamp';
   if (actionsBar) actionsBar.style.display = 'flex';
-  if (selectieHeader) selectieHeader.style.display = 'block';
+  if (selectieHeader) selectieHeader.style.display = 'flex';
 
   renderDeelnemersFormulier(kampId);
 };
@@ -232,7 +236,7 @@ function renderDeelnemersFormulier(kampId) {
       gridHtml += `
         <div class="periode-box">
           <div class="periode-title">${p.label}</div>
-          <select data-deelnemer="${d.id}" data-periode="${p.id}" onchange="onKeuzeChange('${kampId}')">${options}</select>
+          <select class="form-control" data-deelnemer="${d.id}" data-periode="${p.id}" onchange="onKeuzeChange('${kampId}')">${options}</select>
         </div>
       `;
     });
@@ -258,26 +262,46 @@ function updateVoortgangsBalk(kampId) {
   const deelnemers = appData.deelnemers.filter(d => d.kampId === kampId);
   const totaalKeuzes = deelnemers.length * 4;
   let ingevuld = 0;
+  let volledigAantal = 0;
 
   deelnemers.forEach(d => {
+    let dIngevuld = 0;
     ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
       const val = appData.keuzes[`${d.id}_${p}`];
-      if (val && val !== 'unselected') ingevuld++;
+      if (val && val !== 'unselected') {
+        ingevuld++;
+        dIngevuld++;
+      }
     });
+    if (dIngevuld === 4) volledigAantal++;
   });
 
   const percentage = totaalKeuzes > 0 ? Math.round((ingevuld / totaalKeuzes) * 100) : 0;
   
   const textElem = document.getElementById('progressText');
+  const subTextElem = document.getElementById('progressSubText');
   const fillElem = document.getElementById('progressBarFill');
 
-  if (textElem) textElem.textContent = `${ingevuld} / ${totaalKeuzes} keuzes ingevuld (${percentage}%)`;
+  if (textElem) textElem.textContent = `${ingevuld} / ${totaalKeuzes} keuzes (${percentage}%)`;
+  if (subTextElem) subTextElem.textContent = `${volledigAantal} van de ${deelnemers.length} deelnemers volledig ingesteld`;
   if (fillElem) fillElem.style.width = `${percentage}%`;
 }
 
 window.filterDeelnemersLijst = function() {
+  const clearBtn = document.getElementById('searchClearBtn');
+  const input = document.getElementById('deelnemerZoekInput');
+  if (clearBtn && input) clearBtn.style.display = input.value ? 'block' : 'none';
+
   const kampId = document.getElementById('kampSelect').value;
   if (kampId) renderDeelnemersFormulier(kampId);
+};
+
+window.clearSearchInput = function() {
+  const input = document.getElementById('deelnemerZoekInput');
+  if (input) {
+    input.value = '';
+    filterDeelnemersLijst();
+  }
 };
 
 window.onKeuzeChange = function(kampId) {
@@ -344,7 +368,7 @@ function renderBeheerKampCheckboxes() {
   grid.innerHTML = '';
 
   if (appData.deelkampen.length === 0) {
-    grid.innerHTML = '<em>Nog geen deelkampen aangemaakt. Voeg ze hieronder toe.</em>';
+    grid.innerHTML = '<em>Nog geen deelkampen aangemaakt.</em>';
     return;
   }
 
@@ -676,7 +700,7 @@ window.verwijderKamp = async function(id) {
   updateStats();
 };
 
-// 4. OVERZICHT & EXPORT (ENKEL SECTIES WANNEER KEUZES BESTAAN)
+// 4. OVERZICHT (ENKEL SECTIES WANNEER KEUZES BESTAAN)
 window.updateOverzicht = function() {
   const filterKamp = document.getElementById('overzichtKampSelect').value;
   const container = document.getElementById('overzichtContainer');
@@ -684,10 +708,10 @@ window.updateOverzicht = function() {
   container.innerHTML = '';
 
   const periodes = [
-    { id: 'voormiddag', label: 'Voormiddag' },
-    { id: 'namiddag1', label: 'Namiddag 1' },
-    { id: 'namiddag2', label: 'Namiddag 2' },
-    { id: 'avond', label: 'Avond' }
+    { id: 'voormiddag', label: '🌅 Voormiddag' },
+    { id: 'namiddag1', label: '☀️ Namiddag 1' },
+    { id: 'namiddag2', label: '🌤️ Namiddag 2' },
+    { id: 'avond', label: '🌙 Avond' }
   ];
 
   let erIsMinstensEenInschrijving = false;
@@ -731,7 +755,7 @@ window.updateOverzicht = function() {
   });
 
   if (!erIsMinstensEenInschrijving) {
-    container.innerHTML = '<div class="empty-state"><p>Geen inschrijvingen gevonden.</p></div>';
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><h3>Geen Keuzes Gevonden</h3><p>Er zijn nog geen inschrijvingen opgeslagen voor dit filter.</p></div>';
   }
 };
 
@@ -774,7 +798,7 @@ window.onbeforeprint = function() {
   const printContainer = document.getElementById('printContainer');
   const filterKamp = document.getElementById('kampSelect').value;
 
-  let html = `<h2>Topvakantie Keuzeactiviteiten - Overzicht per Tijdsstip</h2>`;
+  let html = `2Topvakantie Keuzeactiviteiten - Overzicht per Tijdsstip</h2>`;
 
   const periodes = [
     { id: 'voormiddag', label: 'Voormiddag' },
