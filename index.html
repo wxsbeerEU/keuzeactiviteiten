@@ -11,9 +11,9 @@
 </head>
 <body>
 
-<div class="app-container">
-  <!-- BANNER / HEADER MET INTEGRATIE VAN TABS -->
-  <header class="app-header">
+<!-- FULL-WIDTH HEADER BANNER -->
+<header class="app-header-full">
+  <div class="header-inner">
     <div class="header-left">
       <div class="brand-logo-container">
         <img src="topvakantie-logo.jpeg" alt="Topvakantie Logo" class="brand-logo">
@@ -39,14 +39,17 @@
         Beheer & Data
       </button>
     </nav>
-  </header>
+  </div>
+</header>
+
+<div class="app-container">
 
   <!-- TAB 1: KEUZES INVOEREN -->
   <div id="tab-selectie" class="tab-content active">
     
-    <!-- KAMP SELECTOR CARD -->
+    <!-- KAMP SELECTOR CARD WITH INTEGRATED BADGE -->
     <div class="card selector-card">
-      <div class="form-group flex-grow">
+      <div class="form-group flex-grow margin-bottom-none">
         <label for="kampSelect" class="form-label">
           <span><strong>Kies het Deelkamp:</strong></span>
           <span class="label-hint">Selecteer de groep waarvan je de keuzes wilt invoeren of bekijken</span>
@@ -55,7 +58,8 @@
           <option value="">-- Selecteer een Deelkamp --</option>
         </select>
       </div>
-      <div class="badge-container">
+      <div class="badge-container align-self-end">
+        <span class="badge-label">Actief Kamp:</span>
         <span class="badge badge-active" id="kampBadge">Selecteer een kamp</span>
       </div>
     </div>
@@ -117,7 +121,7 @@
   <!-- TAB 2: OVERZICHT PER ACTIVITEIT -->
   <div id="tab-overzicht" class="tab-content">
     <div class="card selector-card margin-bottom">
-      <div class="form-group flex-grow">
+      <div class="form-group flex-grow margin-bottom-none">
         <label for="overzichtKampSelect" class="form-label">
           <span><strong>Filter op Deelkamp:</strong></span>
           <span class="label-hint">Bekijk welke kinderen per tijdsblok naar welke activiteit gaan</span>
@@ -153,7 +157,7 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
-      <!-- STATISTIEKEN BARK -->
+      <!-- STATISTIEKEN -->
       <div class="card full-width bg-stats">
         <div class="stats-header">
           <h3>Systeem Dashboard & Live Data</h3>
@@ -228,18 +232,18 @@
         <p class="help-text">Selecteer een CSV-bestand. Verwacht formaat: <code>Naam Deelnemer, Kampnaam</code> of simpelweg 1 naam per regel bij het kiezen van een standaardkamp hieronder.</p>
         
         <div class="admin-grid-inner margin-top-sm">
-          <div class="form-group">
+          <div class="form-group margin-bottom-none">
             <label for="csvFileInput" class="form-label">Selecteer CSV Bestand:</label>
             <input type="file" id="csvFileInput" class="form-control" accept=".csv, .txt">
           </div>
-          <div class="form-group">
+          <div class="form-group margin-bottom-none">
             <label for="csvStandaardKampSelect" class="form-label">Standaard Kamp (indien niet vermeld in CSV):</label>
             <select id="csvStandaardKampSelect" class="form-control">
               <option value="">-- Uit CSV Lezen --</option>
             </select>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="importeerDeelnemersCSV()">Deelnemers Importeren</button>
+        <button class="btn btn-primary margin-top" onclick="importeerDeelnemersCSV()">Deelnemers Importeren</button>
       </div>
 
       <!-- 3. HANDMATIG KAMP TOEVOEGEN -->
@@ -288,16 +292,16 @@
       <div class="card full-width">
         <h3>Beheerderswachtwoord Wijzigen</h3>
         <div class="admin-grid-inner">
-          <div class="form-group">
+          <div class="form-group margin-bottom-none">
             <label for="nieuwWachtwoord1" class="form-label">Nieuw Wachtwoord:</label>
             <input type="password" id="nieuwWachtwoord1" class="form-control" placeholder="Nieuw wachtwoord">
           </div>
-          <div class="form-group">
+          <div class="form-group margin-bottom-none">
             <label for="nieuwWachtwoord2" class="form-label">Herhaal Nieuw Wachtwoord:</label>
             <input type="password" id="nieuwWachtwoord2" class="form-control" placeholder="Herhaal wachtwoord">
           </div>
         </div>
-        <button class="btn btn-secondary" onclick="wijzigWachtwoord()">Wachtwoord Opslaan</button>
+        <button class="btn btn-secondary margin-top" onclick="wijzigWachtwoord()">Wachtwoord Opslaan</button>
       </div>
 
       <!-- OVERZICHT BEHEERLIJST -->
