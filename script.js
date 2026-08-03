@@ -75,16 +75,19 @@ function vulDropdowns() {
   const kampSelect = document.getElementById('kampSelect');
   const overzichtSelect = document.getElementById('overzichtKampSelect');
   const nieuwDeelnemerKamp = document.getElementById('nieuwDeelnemerKamp');
+  const csvStandaardKampSelect = document.getElementById('csvStandaardKampSelect');
 
   kampSelect.innerHTML = '<option value="">-- Selecteer een Deelkamp --</option>';
   overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen --</option>';
   nieuwDeelnemerKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
+  csvStandaardKampSelect.innerHTML = '<option value="">-- Uit CSV Lezen --</option>';
 
   appData.deelkampen.forEach(kamp => {
     const opt = `<option value="${kamp.id}">${kamp.naam}</option>`;
     kampSelect.innerHTML += opt;
     overzichtSelect.innerHTML += opt;
     nieuwDeelnemerKamp.innerHTML += opt;
+    csvStandaardKampSelect.innerHTML += opt;
   });
 }
 
@@ -96,7 +99,7 @@ function updateStats() {
   document.getElementById('statKeuzes').textContent = Object.keys(appData.keuzes).length;
 }
 
-// 1. KEUZES INVOEREN (PER KAMP)
+// 1. KEUZES INVOEREN
 window.onKampChange = function() {
   const kampId = document.getElementById('kampSelect').value;
   const container = document.getElementById('deelnemersContainer');
@@ -178,11 +181,8 @@ function renderDeelnemersFormulier(kampId) {
     periodes.forEach(p => {
       const toegestaneItems = kampAanbod[p.id] || [];
       const key = `${d.id}_${p.id}`;
-      
-      // Standaard 'unselected' tenzij opgeslagen als 'geen' of een activiteit ID
       const geselecteerdActId = appData.keuzes[key] !== undefined ? appData.keuzes[key] : 'unselected';
 
-      // Enkel een expliciete keuze ('geen' of een activiteit ID) telt mee als ingevuld
       if (geselecteerdActId && geselecteerdActId !== 'unselected') {
         ingevuldePeriodes++;
       }
@@ -309,7 +309,7 @@ window.resetKeuzesVanKamp = async function() {
   }
 };
 
-// 2. BEHEER: CHECKBOXES AANBOD MULTI-KAMP
+// 2. BEHEER: CHECKBOXES AANBOD & CSV IMPORT
 function renderBeheerKampCheckboxes() {
   const grid = document.getElementById('beheerKampCheckboxesGrid');
   grid.innerHTML = '';
@@ -376,6 +376,59 @@ window.onBeheerKampSelectionChange = function() {
       `;
     }).join('');
   });
+};
+
+window.importeerDeelnemersCSV = function() {
+  const fileInput = document.getElementById('csvFileInput');
+  const gekozenKampId = document.getElementById('csvStandaardKampSelect').value;
+
+  if (!fileInput.files || fileInput.files.length === 0) {
+    return showModal("Fout", "Selecteer een CSV-bestand.");
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onload = async function(e) {
+    const text = e.target.result;
+    const lijnen = text.split(/\r\n|\n/);
+    let toegevoegdAantal = 0;
+
+    lijnen.forEach(lijn => {
+      if (!lijn.trim()) return;
+      const delen = lijn.split(',');
+      const naam = delen[0].replace(/"/g, '').trim();
+      let kampNaam = delen[1] ? delen[1].replace(/"/g, '').trim() : '';
+
+      if (naam && naam.toLowerCase() !== 'naam' && naam.toLowerCase() !== 'deelnemer') {
+        let doelKampId = gekozenKampId;
+
+        if (!doelKampId && kampNaam) {
+          const gevondenKamp = appData.deelkampen.find(k => k.naam.toLowerCase() === kampNaam.toLowerCase());
+          if (gevondenKamp) doelKampId = gevondenKamp.id;
+        }
+
+        if (doelKampId) {
+          appData.deelnemers.push({ id: Date.now() + Math.random(), naam: naam, kampId: doelKampId });
+          toegevoegdAantal++;
+        }
+      }
+    });
+
+    if (toegevoegdAantal > 0) {
+      appData.deelnemers = sorteerOpNaam(appData.deelnemers);
+      await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
+      initApp();
+      renderBeheerLijsten();
+      updateStats();
+      showModal("Import Succesvol", `${toegevoegdAantal} deelnemers geïmporteerd!`);
+      fileInput.value = '';
+    } else {
+      showModal("Fout", "Geen geldige deelnemers gevonden of kamp niet herkend.");
+    }
+  };
+
+  reader.readAsText(file);
 };
 
 window.opslaanBeheerAanbodMulti = async function() {
@@ -590,48 +643,66 @@ window.verwijderKamp = async function(id) {
   updateStats();
 };
 
-// 4. OVERZICHT & EXPORT (INGEDEELD PER TIJDSSTIP)
+// 4. OVERZICHT (Secties alleen als er inschrijvingen/keuzes zijn)
 window.updateOverzicht = function() {
   const filterKamp = document.getElementById('overzichtKampSelect').value;
   const container = document.getElementById('overzichtContainer');
   container.innerHTML = '';
 
-  const gefilterdeAct = appData.masterActiviteiten;
+  const periodes = [
+    { id: 'voormiddag', label: 'Voormiddag' },
+    { id: 'namiddag1', label: 'Namiddag 1' },
+    { id: 'namiddag2', label: 'Namiddag 2' },
+    { id: 'avond', label: 'Avond' }
+  ];
 
-  if (gefilterdeAct && gefilterdeAct.length > 0) {
-    gefilterdeAct.forEach(act => {
-      const ingeschreven = [];
+  let erIsMinstensEenInschrijving = false;
+
+  periodes.forEach(p => {
+    let periodeHtml = '';
+    let aantalInscriptiesInPeriode = 0;
+
+    appData.masterActiviteiten.forEach(act => {
       const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
-
-      deelnemersLijst.forEach(d => {
-        if (!filterKamp || d.kampId === filterKamp) {
-          ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-            if (appData.keuzes[`${d.id}_${p}`] === act.id) {
-              ingeschreven.push(`${d.naam} (${p})`);
-            }
-          });
-        }
+      const ingeschreven = deelnemersLijst.filter(d => {
+        const isKampMatch = !filterKamp || d.kampId === filterKamp;
+        return isKampMatch && appData.keuzes[`${d.id}_${p.id}`] === act.id;
       });
 
       if (ingeschreven.length > 0) {
-        const card = document.createElement('div');
-        card.className = 'overzicht-card';
-        card.innerHTML = `
-          <h3>${act.naam}</h3>
-          <p><strong>Aantal inschrijvingen:</strong> ${ingeschreven.length}</p>
-          <div class="deelnemers-tags">
-            ${ingeschreven.map(n => `<span class="tag">${n}</span>`).join('')}
+        aantalInscriptiesInPeriode += ingeschreven.length;
+        erIsMinstensEenInschrijving = true;
+
+        periodeHtml += `
+          <div class="overzicht-card">
+            <h4>${act.naam}</h4>
+            <p>${ingeschreven.length} deelnemer(s)</p>
+            <div class="deelnemers-tags">
+              ${ingeschreven.map(d => `<span class="tag">${d.naam}</span>`).join('')}
+            </div>
           </div>
         `;
-        container.appendChild(card);
       }
     });
-  } else {
+
+    // Toon het tijdsblok ALLEEN als er daadwerkelijk inschrijvingen zijn!
+    if (aantalInscriptiesInPeriode > 0) {
+      const sectie = document.createElement('div');
+      sectie.className = 'tijdsstip-sectie';
+      sectie.innerHTML = `
+        <h3 class="tijdsstip-titel">${p.label}</h3>
+        <div class="overzicht-grid">${periodeHtml}</div>
+      `;
+      container.appendChild(sectie);
+    }
+  });
+
+  if (!erIsMinstensEenInschrijving) {
     container.innerHTML = '<div class="empty-state"><p>Geen inschrijvingen gevonden.</p></div>';
   }
 };
 
-// EXPORT CSV - GESTRUCTUREERD PER TIJDSSTIP DAN ACTIVITEIT DAN NAMEN
+// EXPORT CSV - GEAANDUID PER TIJDSSTIP, ACTIVITEIT EN NAMEN
 window.exportCSV = function() {
   const filterKamp = document.getElementById('kampSelect').value;
   let csv = `TIJDSSTIP,ACTIVITEIT,DEELNEMER,KAMP\n`;
@@ -667,7 +738,7 @@ window.exportCSV = function() {
   link.click();
 };
 
-// HERSTRUCTUREER PRINT WEERGAVE (VOOR WINDOW.PRINT)
+// HERSTRUCTUREER PRINT WEERGAVE
 window.onbeforeprint = function() {
   const printContainer = document.getElementById('printContainer');
   const filterKamp = document.getElementById('kampSelect').value;
@@ -682,8 +753,8 @@ window.onbeforeprint = function() {
   ];
 
   periodes.forEach(p => {
-    html += `<div class="print-period-header">${p.label}</div>`;
-    let heeftActiviteiten = false;
+    let periodeHtml = '';
+    let heeftInschrijvingen = false;
 
     appData.masterActiviteiten.forEach(act => {
       const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
@@ -693,8 +764,8 @@ window.onbeforeprint = function() {
       });
 
       if (ingeschreven.length > 0) {
-        heeftActiviteiten = true;
-        html += `
+        heeftInschrijvingen = true;
+        periodeHtml += `
           <div class="print-act-title">${act.naam} (${ingeschreven.length} deelnemers)</div>
           <ol class="print-names-list">
             ${ingeschreven.map(d => `<li>${d.naam}</li>`).join('')}
@@ -703,8 +774,8 @@ window.onbeforeprint = function() {
       }
     });
 
-    if (!heeftActiviteiten) {
-      html += `<p style="margin-left: 10px; font-style: italic;">Geen inschrijvingen voor deze periode.</p>`;
+    if (heeftInschrijvingen) {
+      html += `<div class="print-period-header">${p.label}</div>${periodeHtml}`;
     }
   });
 
