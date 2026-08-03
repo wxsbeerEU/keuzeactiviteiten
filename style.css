@@ -88,7 +88,7 @@ header {
 .selector-card { display: flex; align-items: center; gap: 20px; }
 
 /* Formuliervelden */
-select, input[type="text"], input[type="password"], input[type="number"] {
+select, input[type="text"], input[type="password"], input[type="number"], input[type="file"] {
   padding: 10px 14px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
@@ -96,6 +96,7 @@ select, input[type="text"], input[type="password"], input[type="number"] {
   outline: none;
   width: 100%;
   transition: border-color 0.2s;
+  background: white;
 }
 
 select:focus, input:focus {
@@ -187,46 +188,62 @@ select:focus, input:focus {
 
 .periode-box select { width: 100%; font-size: 0.88rem; }
 
-/* TAB 2: OVERZICHT PER ACTIVITEIT GRID */
+/* TAB 2: OVERZICHT PER ACTIVITEIT (GESTRUCTUREERD PER TIJDSSTIP) */
+.tijdsstip-sectie {
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.tijdsstip-titel {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--secondary);
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 2.5px solid var(--primary);
+  padding-bottom: 8px;
+}
+
 .overzicht-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
 }
 
 .overzicht-card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
+  background: #f8faf6;
+  padding: 16px;
+  border-radius: 10px;
   border: 1px solid var(--border);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
 
-.overzicht-card h3 {
+.overzicht-card h4 {
   margin-top: 0;
-  margin-bottom: 10px;
-  color: var(--secondary);
-  font-size: 1.2rem;
-  border-bottom: 2px solid #f0f4ec;
-  padding-bottom: 8px;
+  margin-bottom: 8px;
+  color: var(--primary);
+  font-size: 1.1rem;
 }
 
 .overzicht-card p {
-  margin: 0 0 12px 0;
-  color: #475569;
-  font-size: 0.92rem;
+  margin: 0 0 10px 0;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
-.deelnemers-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.deelnemers-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .tag {
-  background: #f0f7e8;
-  color: #3e6614;
-  padding: 5px 12px;
-  border-radius: 16px;
-  font-size: 0.85rem;
+  background: white;
+  color: var(--secondary);
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.82rem;
   font-weight: 600;
-  border: 1px solid #cce2b5;
+  border: 1px solid var(--border);
 }
 
 /* TAB 3: BEHEERPANEEL GRID */
@@ -323,10 +340,10 @@ select:focus, input:focus {
 @media print {
   body { background: white; color: black; padding: 0; }
   .container { display: none !important; }
-  .print-only { display: block !important; }
+  .print-only { display: block !important; padding: 20px; }
   .print-period-header { font-size: 1.6rem; font-weight: bold; border-bottom: 3px solid #004b87; margin-top: 25px; padding-bottom: 5px; color: #004b87; }
-  .print-act-title { font-size: 1.2rem; font-weight: bold; margin-top: 15px; color: #70b22a; }
-  .print-names-list { margin-left: 20px; margin-bottom: 15px; }
+  .print-act-title { font-size: 1.15rem; font-weight: bold; margin-top: 15px; color: #70b22a; }
+  .print-names-list { margin-left: 20px; margin-bottom: 15px; line-height: 1.5; }
 }
 
 /* Modal */
