@@ -15,10 +15,12 @@
   <!-- BANNER / HEADER -->
   <header class="app-header">
     <div class="header-brand">
-      <div class="brand-icon">✨</div>
-      <div>
-        <h1 class="brand-title">Topvakantie Keuzeactiviteiten</h1>
-        <p class="brand-subtitle">Slim, overzichtelijk & realtime beheer van kampactiviteiten</p>
+      <div class="brand-logo-container">
+        <img src="topvakantie-logo.jpeg" alt="Topvakantie Logo" class="brand-logo">
+      </div>
+      <div class="brand-text">
+        <h1 class="brand-title">Keuzeactiviteiten</h1>
+        <p class="brand-subtitle">Beheersysteem voor dag- en kampactiviteiten</p>
       </div>
     </div>
     <div class="header-badge-container">
@@ -29,13 +31,16 @@
   <!-- NAVIGATIE TABS -->
   <nav class="nav-tabs" role="tablist">
     <button class="tab-btn active" onclick="openTab('selectie')" role="tab">
-      <span class="tab-icon">📝</span> Keuzes Invoeren
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+      Keuzes Invoeren
     </button>
     <button class="tab-btn" onclick="openTab('overzicht')" role="tab">
-      <span class="tab-icon">📊</span> Overzicht Per Activiteit
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+      Overzicht Per Activiteit
     </button>
     <button class="tab-btn" onclick="openTab('beheer')" role="tab">
-      <span class="tab-icon">⚙️</span> Beheer & Data 🔒
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.99 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      Beheer & Data
     </button>
   </nav>
 
@@ -72,7 +77,7 @@
 
       <div class="card search-card">
         <div class="search-input-wrapper">
-          <span class="search-icon">🔍</span>
+          <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
           <input type="text" id="deelnemerZoekInput" class="form-control search-input" placeholder="Zoek deelnemer op naam..." oninput="filterDeelnemersLijst()">
           <button class="search-clear-btn" id="searchClearBtn" onclick="clearSearchInput()" style="display:none;">✕</button>
         </div>
@@ -82,23 +87,27 @@
     <!-- ACTIEBALK -->
     <div class="actions-bar" id="actionsBar">
       <button class="btn btn-primary btn-shadow" onclick="opslaanKeuzes()">
-        <span class="btn-icon">💾</span> Keuzes Opslaan
+        <svg class="btn-svg" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        Keuzes Opslaan
       </button>
       <button class="btn btn-danger-soft" onclick="resetKeuzesVanKamp()">
-        <span class="btn-icon">🔄</span> Reset Keuzes van dit Kamp
+        <svg class="btn-svg" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        Reset Keuzes
       </button>
       <button class="btn btn-secondary" onclick="exportCSV()">
-        <span class="btn-icon">📊</span> Export Excel (CSV)
+        <svg class="btn-svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        Export Excel
       </button>
       <button class="btn btn-secondary" onclick="window.print()">
-        <span class="btn-icon">🖨️</span> Afdrukken
+        <svg class="btn-svg" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+        Afdrukken
       </button>
     </div>
 
     <!-- DEELNEMERS FORMULIER CONTAINER -->
     <div id="deelnemersContainer">
       <div class="empty-state">
-        <div class="empty-icon">⛺</div>
+        <svg class="empty-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
         <h3>Geen Deelkamp Geselecteerd</h3>
         <p>Kies hierboven een deelkamp om de lijst van deelnemers te openen en de dagkeuzes in te voeren.</p>
       </div>
@@ -127,7 +136,9 @@
     
     <!-- LOGIN CARD -->
     <div id="loginFormCard" class="card max-width-center align-center login-card">
-      <div class="login-lock-icon">🔒</div>
+      <div class="login-lock-icon">
+        <svg class="lock-svg" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-1.64-5-4-5S9 3.24 9 6v2H8c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+      </div>
       <h3>Beheer Beveiligd</h3>
       <p class="login-subtitle">Voer het beheerderswachtwoord in om toegang te krijgen tot instellingen, dagaanbod en CSV-import.</p>
       
@@ -142,10 +153,10 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
-      <!-- STATISTIEKEN BAAK -->
+      <!-- STATISTIEKEN BARK -->
       <div class="card full-width bg-stats">
         <div class="stats-header">
-          <h3>📈 Systeem Dashboard & Live Data</h3>
+          <h3>Systeem Dashboard & Live Data</h3>
         </div>
         <div class="stats-grid">
           <div class="stat-box">
@@ -188,25 +199,25 @@
         <div id="beheerAanbodPanel" style="display:none;" class="margin-top border-top-divider">
           <div class="periodes-aanbod-grid margin-top">
             <div class="periode-aanbod-box">
-              <h4 class="periode-title"><span class="periode-icon">🌅</span> Voormiddag</h4>
+              <h4 class="periode-title">Voormiddag</h4>
               <div id="beheer-aanbod-voormiddag" class="checkbox-list"></div>
             </div>
             <div class="periode-aanbod-box">
-              <h4 class="periode-title"><span class="periode-icon">☀️</span> Namiddag 1</h4>
+              <h4 class="periode-title">Namiddag 1</h4>
               <div id="beheer-aanbod-namiddag1" class="checkbox-list"></div>
             </div>
             <div class="periode-aanbod-box">
-              <h4 class="periode-title"><span class="periode-icon">🌤️</span> Namiddag 2</h4>
+              <h4 class="periode-title">Namiddag 2</h4>
               <div id="beheer-aanbod-namiddag2" class="checkbox-list"></div>
             </div>
             <div class="periode-aanbod-box">
-              <h4 class="periode-title"><span class="periode-icon">🌙</span> Avond</h4>
+              <h4 class="periode-title">Avond</h4>
               <div id="beheer-aanbod-avond" class="checkbox-list"></div>
             </div>
           </div>
           <div class="btn-group margin-top">
-            <button class="btn btn-primary" onclick="opslaanBeheerAanbodMulti()">💾 Dagaanbod Opslaan</button>
-            <button class="btn btn-danger-soft" onclick="resetAanbodVanGeselecteerdeKampen()">🔄 Reset Dagaanbod (Geselecteerde Kampen)</button>
+            <button class="btn btn-primary" onclick="opslaanBeheerAanbodMulti()">Dagaanbod Opslaan</button>
+            <button class="btn btn-danger-soft" onclick="resetAanbodVanGeselecteerdeKampen()">Reset Dagaanbod (Geselecteerde Kampen)</button>
           </div>
         </div>
       </div>
@@ -228,7 +239,7 @@
             </select>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="importeerDeelnemersCSV()">📥 Deelnemers Importeren</button>
+        <button class="btn btn-primary" onclick="importeerDeelnemersCSV()">Deelnemers Importeren</button>
       </div>
 
       <!-- 3. HANDMATIG KAMP TOEVOEGEN -->
@@ -238,7 +249,7 @@
           <label for="nieuwKampNaam" class="form-label">Naam Kamp:</label>
           <input type="text" id="nieuwKampNaam" class="form-control" placeholder="bijv. Surfen of Gaming" onkeyup="if(event.key==='Enter') voegKampToe()">
         </div>
-        <button class="btn btn-primary" onclick="voegKampToe()">➕ Kamp Toevoegen</button>
+        <button class="btn btn-primary" onclick="voegKampToe()">Kamp Toevoegen</button>
       </div>
 
       <!-- 4. HANDMATIG DEELNEMER TOEVOEGEN -->
@@ -252,7 +263,7 @@
           <label for="nieuwDeelnemerKamp" class="form-label">Deelkamp:</label>
           <select id="nieuwDeelnemerKamp" class="form-control"></select>
         </div>
-        <button class="btn btn-primary" onclick="voegDeelnemerToe()">👤 Deelnemer Toevoegen</button>
+        <button class="btn btn-primary" onclick="voegDeelnemerToe()">Deelnemer Toevoegen</button>
       </div>
 
       <!-- 5. MASTER ACTIVITEIT TOEVOEGEN -->
@@ -263,14 +274,14 @@
           <label for="nieuwActNaam" class="form-label">Naam Activiteit:</label>
           <input type="text" id="nieuwActNaam" class="form-control" placeholder="bijv. Archery Tag, Vlotten Bouwen, Gaming..." onkeyup="if(event.key==='Enter') voegMasterActiviteitToe()">
         </div>
-        <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">🎯 Toevoegen aan Database</button>
+        <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Database</button>
       </div>
 
       <!-- 6. RESETS & ONDERHOUD -->
       <div class="card full-width danger-card-border">
         <h3 class="color-danger">6. Systeem Resets & Dagelijkse Schoonmaak</h3>
         <p class="help-text">Wis met één klik alle gekozen dagkeuzes van alle deelnemers uit de hele database om de site klaar te maken voor een nieuwe dag.</p>
-        <button class="btn btn-danger" onclick="resetAlleKeuzesGlobal()">🧹 Reset Alle Deelnemer Keuzes (Alle Kampen)</button>
+        <button class="btn btn-danger" onclick="resetAlleKeuzesGlobal()">Reset Alle Deelnemer Keuzes (Alle Kampen)</button>
       </div>
 
       <!-- WACHTWOORD WIJZIGEN -->
@@ -286,7 +297,7 @@
             <input type="password" id="nieuwWachtwoord2" class="form-control" placeholder="Herhaal wachtwoord">
           </div>
         </div>
-        <button class="btn btn-secondary" onclick="wijzigWachtwoord()">🔑 Wachtwoord Opslaan</button>
+        <button class="btn btn-secondary" onclick="wijzigWachtwoord()">Wachtwoord Opslaan</button>
       </div>
 
       <!-- OVERZICHT BEHEERLIJST -->
@@ -299,7 +310,7 @@
   </div>
 </div>
 
-<!-- PRINT CONTAINER -->
+<!-- PRINT CONTAINER (PER ACTIVITEIT OP APPARTE PAGINA) -->
 <div id="printContainer" class="print-only"></div>
 
 <!-- MODAL DIALOG -->
