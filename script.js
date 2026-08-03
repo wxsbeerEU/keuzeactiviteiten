@@ -118,6 +118,17 @@ function updateStats() {
   if (statKeuzes) statKeuzes.textContent = Object.keys(appData.keuzes).length;
 }
 
+// Bepaal hoeveel periodes er daadwerkelijk een aanbod hebben voor een kamp
+function getAantalActievePeriodes(kampId) {
+  const kampAanbod = appData.periodeAanbod[kampId] || {};
+  let actiefCount = 0;
+  ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
+    const items = kampAanbod[p] || [];
+    if (items.length > 0) actiefCount++;
+  });
+  return actiefCount;
+}
+
 // 1. KEUZES INVOEREN
 window.onKampChange = function() {
   const kampSelect = document.getElementById('kampSelect');
@@ -177,6 +188,7 @@ function renderDeelnemersFormulier(kampId) {
 
   const kampAanbod = appData.periodeAanbod[kampId] || {};
   const huidigeAantallen = berekenAantallen(kampId);
+  const maxPeriodesVoorKamp = getAantalActievePeriodes(kampId);
 
   const zoekTerm = document.getElementById('deelnemerZoekInput')?.value.toLowerCase().trim() || '';
   if (zoekTerm) {
@@ -208,43 +220,53 @@ function renderDeelnemersFormulier(kampId) {
 
     periodes.forEach(p => {
       const toegestaneItems = kampAanbod[p.id] || [];
+      const heeftAanbod = toegestaneItems.length > 0;
       const key = `${d.id}_${p.id}`;
-      const geselecteerdActId = appData.keuzes[key] !== undefined ? appData.keuzes[key] : 'unselected';
 
-      if (geselecteerdActId && geselecteerdActId !== 'unselected') {
-        ingevuldePeriodes++;
+      let options = '';
+
+      if (!heeftAanbod) {
+        // Geen aanbod voor dit tijdsstip -> automatisch uitgeschakeld en telt niet als te kiezen
+        options = `<option value="geen" selected disabled>-- Geen Aanbod --</option>`;
+      } else {
+        const geselecteerdActId = appData.keuzes[key] !== undefined ? appData.keuzes[key] : 'unselected';
+
+        if (geselecteerdActId && geselecteerdActId !== 'unselected') {
+          ingevuldePeriodes++;
+        }
+
+        options = `<option value="unselected" ${geselecteerdActId === 'unselected' ? 'selected' : ''}>-- Kies Activiteit --</option>`;
+        options += `<option value="geen" ${geselecteerdActId === 'geen' ? 'selected' : ''}>-- Geen Activiteit --</option>`;
+
+        const mogelijkeMasterAct = appData.masterActiviteiten.filter(a => toegestaneItems.some(item => item.actId === a.id));
+        sorteerOpNaam(mogelijkeMasterAct);
+
+        mogelijkeMasterAct.forEach(act => {
+          const item = toegestaneItems.find(i => i.actId === act.id);
+          const teller = huidigeAantallen[`${p.id}_${act.id}`] || 0;
+          const max = parseInt(item ? item.max : 0) || 0;
+          const isVol = max > 0 && teller >= max && geselecteerdActId !== act.id;
+          
+          let capLabel = max > 0 ? ` (${teller}/${max})` : '';
+          if (isVol) capLabel += ' [VOL]';
+
+          options += `<option value="${act.id}" ${geselecteerdActId === act.id ? 'selected' : ''} ${isVol ? 'disabled' : ''}>${act.naam}${capLabel}</option>`;
+        });
       }
 
-      let options = `<option value="unselected" ${geselecteerdActId === 'unselected' ? 'selected' : ''}>-- Kies Activiteit --</option>`;
-      options += `<option value="geen" ${geselecteerdActId === 'geen' ? 'selected' : ''}>-- Geen Activiteit --</option>`;
-
-      const mogelijkeMasterAct = appData.masterActiviteiten.filter(a => toegestaneItems.some(item => item.actId === a.id));
-      sorteerOpNaam(mogelijkeMasterAct);
-
-      mogelijkeMasterAct.forEach(act => {
-        const item = toegestaneItems.find(i => i.actId === act.id);
-        const teller = huidigeAantallen[`${p.id}_${act.id}`] || 0;
-        const max = parseInt(item ? item.max : 0) || 0;
-        const isVol = max > 0 && teller >= max && geselecteerdActId !== act.id;
-        
-        let capLabel = max > 0 ? ` (${teller}/${max})` : '';
-        if (isVol) capLabel += ' [VOL]';
-
-        options += `<option value="${act.id}" ${geselecteerdActId === act.id ? 'selected' : ''} ${isVol ? 'disabled' : ''}>${act.naam}${capLabel}</option>`;
-      });
-
       gridHtml += `
-        <div class="periode-box">
+        <div class="periode-box ${!heeftAanbod ? 'periode-disabled' : ''}">
           <div class="periode-title">${p.label}</div>
-          <select class="form-control" data-deelnemer="${d.id}" data-periode="${p.id}" onchange="onKeuzeChange('${kampId}')">${options}</select>
+          <select class="form-control" data-deelnemer="${d.id}" data-periode="${p.id}" ${!heeftAanbod ? 'disabled' : ''} onchange="onKeuzeChange('${kampId}')">${options}</select>
         </div>
       `;
     });
 
-    const isVolledig = ingevuldePeriodes === 4;
+    // DYNAMISCHE CHECK: Vergelijk ingevuld met het AANTAL ACTIEVE PERIODES voor dit kamp
+    const isVolledig = maxPeriodesVoorKamp === 0 || ingevuldePeriodes >= maxPeriodesVoorKamp;
     const statusBadge = isVolledig 
-      ? '<span class="status-tag complete">✓ 4/4 Ingesteld</span>' 
-      : `<span class="status-tag incomplete">⚠️ ${ingevuldePeriodes}/4 Ingesteld</span>`;
+      ? `<span class="status-tag complete">✓ ${ingevuldePeriodes}/${maxPeriodesVoorKamp} Ingesteld</span>` 
+      : `<span class="status-tag incomplete">⚠️ ${ingevuldePeriodes}/${maxPeriodesVoorKamp} Ingesteld</span>`;
 
     card.innerHTML = `
       <div class="deelnemer-header">
@@ -260,23 +282,28 @@ function renderDeelnemersFormulier(kampId) {
 
 function updateVoortgangsBalk(kampId) {
   const deelnemers = appData.deelnemers.filter(d => d.kampId === kampId);
-  const totaalKeuzes = deelnemers.length * 4;
+  const maxPeriodesVoorKamp = getAantalActievePeriodes(kampId);
+  const totaalKeuzes = deelnemers.length * maxPeriodesVoorKamp;
+  
   let ingevuld = 0;
   let volledigAantal = 0;
 
   deelnemers.forEach(d => {
     let dIngevuld = 0;
     ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-      const val = appData.keuzes[`${d.id}_${p}`];
-      if (val && val !== 'unselected') {
-        ingevuld++;
-        dIngevuld++;
+      const toegestaneItems = (appData.periodeAanbod[kampId] || {})[p] || [];
+      if (toegestaneItems.length > 0) {
+        const val = appData.keuzes[`${d.id}_${p}`];
+        if (val && val !== 'unselected') {
+          ingevuld++;
+          dIngevuld++;
+        }
       }
     });
-    if (dIngevuld === 4) volledigAantal++;
+    if (maxPeriodesVoorKamp === 0 || dIngevuld >= maxPeriodesVoorKamp) volledigAantal++;
   });
 
-  const percentage = totaalKeuzes > 0 ? Math.round((ingevuld / totaalKeuzes) * 100) : 0;
+  const percentage = totaalKeuzes > 0 ? Math.round((ingevuld / totaalKeuzes) * 100) : (deelnemers.length > 0 ? 100 : 0);
   
   const textElem = document.getElementById('progressText');
   const subTextElem = document.getElementById('progressSubText');
