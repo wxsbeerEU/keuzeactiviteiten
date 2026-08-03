@@ -43,7 +43,7 @@ body {
 .app-header {
   background: linear-gradient(135deg, #70b22a 0%, #8bc53f 100%);
   color: white;
-  padding: 16px 30px;
+  padding: 20px 30px;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   margin-bottom: 24px;
   display: flex;
