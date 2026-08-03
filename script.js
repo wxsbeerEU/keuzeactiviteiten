@@ -75,7 +75,7 @@ async function laadFirebaseData() {
     initApp();
   } catch (error) {
     console.error("Firebase Laad Fout:", error);
-    showModal("Fout bij laden", "Kon geen verbinding maken met de database. Controleer de internetverbinding.");
+    showModal("Fout bij laden", "Kon geen verbinding maken met de database. Controleer de Firebase Rules instellingen.");
   }
 }
 
@@ -355,7 +355,7 @@ window.opslaanKeuzes = async function() {
     }
   });
 
-  // Schoon lege/undefined waarden op voor opslag in Firebase
+  // Schoon alle ongedefinieerde/lege keuzes op voor opslag
   const schoneKeuzes = {};
   Object.keys(appData.keuzes).forEach(k => {
     if (appData.keuzes[k] && appData.keuzes[k] !== 'unselected') {
@@ -371,7 +371,7 @@ window.opslaanKeuzes = async function() {
     updateStats();
   } catch (err) {
     console.error("Firebase Opslaan Fout:", err);
-    showModal("Fout", "Kon keuzes niet opslaan in de database. Controleer de verbinding.");
+    showModal("Fout bij opslaan", "Kon keuzes niet opslaan. Controleer of Firebase Rules op 'read: true, write: true' staan.");
   }
 };
 
