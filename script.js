@@ -755,7 +755,7 @@ window.updateOverzicht = function() {
   });
 
   if (!erIsMinstensEenInschrijving) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><h3>Geen Keuzes Gevonden</h3><p>Er zijn nog geen inschrijvingen opgeslagen voor dit filter.</p></div>';
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg class="empty-svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div><h3>Geen Keuzes Gevonden</h3><p>Er zijn nog geen inschrijvingen opgeslagen voor dit filter.</p></div>';
   }
 };
 
@@ -864,7 +864,6 @@ window.onbeforeprint = function() {
         return isKampMatch && appData.keuzes[`${d.id}_${p.id}`] === act.id;
       });
 
-      // Elk tijdsstip + activiteit die inschrijvingen heeft krijgt een EIGEN PAGINA!
       if (ingeschreven.length > 0) {
         html += `
           <div class="print-page">
