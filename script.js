@@ -302,7 +302,7 @@ window.resetKeuzesVanKamp = async function() {
   }
 };
 
-// 2. BEHEER: MULTI KAMP CHECKBOXES
+// 2. BEHEER: CHECKBOXES AANBOD MULTI-KAMP
 function renderBeheerKampCheckboxes() {
   const grid = document.getElementById('beheerKampCheckboxesGrid');
   grid.innerHTML = '';
@@ -583,7 +583,7 @@ window.verwijderKamp = async function(id) {
   updateStats();
 };
 
-// 4. OVERZICHT & EXPORT
+// 4. OVERZICHT & EXPORT (GRID LAYOUT HERSTELD)
 window.updateOverzicht = function() {
   const filterKamp = document.getElementById('overzichtKampSelect').value;
   const container = document.getElementById('overzichtContainer');
