@@ -118,7 +118,6 @@ function updateStats() {
   if (statKeuzes) statKeuzes.textContent = Object.keys(appData.keuzes).length;
 }
 
-// Bepaal hoeveel periodes er daadwerkelijk een aanbod hebben voor een kamp
 function getAantalActievePeriodes(kampId) {
   const kampAanbod = appData.periodeAanbod[kampId] || {};
   let actiefCount = 0;
@@ -171,7 +170,7 @@ function berekenAantallen(kampId) {
   deelnemersInKamp.forEach(d => {
     ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
       const actId = appData.keuzes[`${d.id}_${p}`];
-      if (actId && actId !== 'geen' && actId !== 'unselected') {
+      if (actId && actId !== 'unselected') {
         const sleutel = `${p}_${actId}`;
         aantallen[sleutel] = (aantallen[sleutel] || 0) + 1;
       }
@@ -226,8 +225,7 @@ function renderDeelnemersFormulier(kampId) {
       let options = '';
 
       if (!heeftAanbod) {
-        // Geen aanbod voor dit tijdsstip -> automatisch uitgeschakeld en telt niet als te kiezen
-        options = `<option value="geen" selected disabled>-- Geen Aanbod --</option>`;
+        options = `<option value="unselected" selected disabled>-- Geen Aanbod --</option>`;
       } else {
         const geselecteerdActId = appData.keuzes[key] !== undefined ? appData.keuzes[key] : 'unselected';
 
@@ -236,7 +234,6 @@ function renderDeelnemersFormulier(kampId) {
         }
 
         options = `<option value="unselected" ${geselecteerdActId === 'unselected' ? 'selected' : ''}>-- Kies Activiteit --</option>`;
-        options += `<option value="geen" ${geselecteerdActId === 'geen' ? 'selected' : ''}>-- Geen Activiteit --</option>`;
 
         const mogelijkeMasterAct = appData.masterActiviteiten.filter(a => toegestaneItems.some(item => item.actId === a.id));
         sorteerOpNaam(mogelijkeMasterAct);
@@ -262,7 +259,6 @@ function renderDeelnemersFormulier(kampId) {
       `;
     });
 
-    // DYNAMISCHE CHECK: Vergelijk ingevuld met het AANTAL ACTIEVE PERIODES voor dit kamp
     const isVolledig = maxPeriodesVoorKamp === 0 || ingevuldePeriodes >= maxPeriodesVoorKamp;
     const statusBadge = isVolledig 
       ? `<span class="status-tag complete">✓ ${ingevuldePeriodes}/${maxPeriodesVoorKamp} Ingesteld</span>` 
@@ -336,7 +332,11 @@ window.onKeuzeChange = function(kampId) {
   selects.forEach(s => {
     const dId = s.dataset.deelnemer;
     const p = s.dataset.periode;
-    appData.keuzes[`${dId}_${p}`] = s.value;
+    if (s.value && s.value !== 'unselected') {
+      appData.keuzes[`${dId}_${p}`] = s.value;
+    } else {
+      delete appData.keuzes[`${dId}_${p}`];
+    }
   });
 
   renderDeelnemersFormulier(kampId);
@@ -348,16 +348,30 @@ window.opslaanKeuzes = async function() {
   selects.forEach(s => {
     const dId = s.dataset.deelnemer;
     const p = s.dataset.periode;
-    appData.keuzes[`${dId}_${p}`] = s.value;
+    if (s.value && s.value !== 'unselected') {
+      appData.keuzes[`${dId}_${p}`] = s.value;
+    } else {
+      delete appData.keuzes[`${dId}_${p}`];
+    }
+  });
+
+  // Schoon lege/undefined waarden op voor opslag in Firebase
+  const schoneKeuzes = {};
+  Object.keys(appData.keuzes).forEach(k => {
+    if (appData.keuzes[k] && appData.keuzes[k] !== 'unselected') {
+      schoneKeuzes[k] = appData.keuzes[k];
+    }
   });
 
   try {
-    await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
-    showModal("Opgeslagen!", "Keuzes van de deelnemers zijn opgeslagen.");
+    await set(ref(db, 'topvakantie/keuzes'), schoneKeuzes);
+    appData.keuzes = schoneKeuzes;
+    showModal("Opgeslagen!", "Keuzes van de deelnemers zijn succesvol opgeslagen.");
     updateOverzicht();
     updateStats();
   } catch (err) {
-    showModal("Fout", "Kon niet opslaan in Firebase.");
+    console.error("Firebase Opslaan Fout:", err);
+    showModal("Fout", "Kon keuzes niet opslaan in de database. Controleer de verbinding.");
   }
 };
 
@@ -786,7 +800,6 @@ window.updateOverzicht = function() {
   }
 };
 
-// EXPORT EXCEL GEFORMATTEERD (.XLS MET KLEUREN EN STIJL)
 window.exportCSV = function() {
   const filterKamp = document.getElementById('kampSelect').value;
   
@@ -869,7 +882,6 @@ window.exportCSV = function() {
   link.click();
 };
 
-// HERSTRUCTUREER PRINT WEERGAVE: ELKE ACTIVITEIT OP EEN APPARTE PAGINA!
 window.onbeforeprint = function() {
   const printContainer = document.getElementById('printContainer');
   const filterKamp = document.getElementById('kampSelect').value;
