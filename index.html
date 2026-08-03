@@ -62,7 +62,7 @@
     <div class="actions-bar" id="actionsBar">
       <button class="btn btn-primary" onclick="opslaanKeuzes()">💾 Keuzes Opslaan</button>
       <button class="btn btn-danger" onclick="resetKeuzesVanKamp()">🔄 Reset Keuzes Van Dit Kamp</button>
-      <button class="btn btn-secondary" onclick="exportCSV()">📊 Export Excel (Per Tijdsstip)</button>
+      <button class="btn btn-secondary" onclick="exportCSV()">📊 Export Excel (CSV)</button>
       <button class="btn btn-secondary" onclick="window.print()">🖨️ Afdrukken</button>
     </div>
 
@@ -85,7 +85,7 @@
       </div>
     </div>
 
-    <div id="overzichtContainer" class="overzicht-grid"></div>
+    <div id="overzichtContainer"></div>
   </div>
 
   <!-- TAB 3: BEHEER & DATA (BEVEILIGD) -->
@@ -171,9 +171,29 @@
         </div>
       </div>
 
-      <!-- 2. KAMP TOEVOEGEN -->
+      <!-- 2. DEELNEMERS IMPORTEREN VIA CSV -->
+      <div class="card full-width">
+        <h3>2. Deelnemers Importeren via CSV</h3>
+        <p class="help-text">Upload een CSV-bestand met deelnemers. Formaatsleutel: <code>Naam Deelnemer, Kampnaam</code> (of selecteer hieronder één kamp voor alle namen in het bestand).</p>
+        
+        <div class="admin-grid-inner margin-top-sm">
+          <div class="form-group">
+            <label>Selecteer CSV Bestand:</label>
+            <input type="file" id="csvFileInput" accept=".csv, .txt">
+          </div>
+          <div class="form-group">
+            <label>Standaard Deelkamp (als niet in CSV staat):</label>
+            <select id="csvStandaardKampSelect">
+              <option value="">-- Uit CSV Lezen --</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="importeerDeelnemersCSV()">📥 Deelnemers Importeren</button>
+      </div>
+
+      <!-- 3. HANDMATIG KAMP TOEVOEGEN -->
       <div class="card">
-        <h3>2. Nieuw Deelkamp</h3>
+        <h3>3. Nieuw Deelkamp</h3>
         <div class="form-group">
           <label>Naam Kamp:</label>
           <input type="text" id="nieuwKampNaam" placeholder="bijv. Surfen of Gaming">
@@ -181,9 +201,9 @@
         <button class="btn btn-primary" onclick="voegKampToe()">Kamp Toevoegen</button>
       </div>
 
-      <!-- 3. DEELNEMER TOEVOEGEN -->
+      <!-- 4. HANDMATIG DEELNEMER TOEVOEGEN -->
       <div class="card">
-        <h3>3. Nieuwe Deelnemer</h3>
+        <h3>4. Nieuwe Deelnemer</h3>
         <div class="form-group">
           <label>Naam Deelnemer:</label>
           <input type="text" id="nieuwDeelnemerNaam" placeholder="bijv. Lucas De Smet">
@@ -195,9 +215,9 @@
         <button class="btn btn-primary" onclick="voegDeelnemerToe()">Deelnemer Toevoegen</button>
       </div>
 
-      <!-- 4. MASTER ACTIVITEIT TOEVOEGEN -->
+      <!-- 5. MASTER ACTIVITEIT TOEVOEGEN -->
       <div class="card full-width">
-        <h3>4. Totale Activiteiten Database (Master-Lijst)</h3>
+        <h3>5. Totale Activiteiten Database (Master-Lijst)</h3>
         <div class="form-group">
           <label>Naam Activiteit:</label>
           <input type="text" id="nieuwActNaam" placeholder="bijv. Archery Tag, Vlotten Bouwen...">
@@ -205,9 +225,9 @@
         <button class="btn btn-primary" onclick="voegMasterActiviteitToe()">Toevoegen aan Master-Database</button>
       </div>
 
-      <!-- 5. RESETS -->
+      <!-- 6. RESETS -->
       <div class="card full-width">
-        <h3>5. Global Resets</h3>
+        <h3>6. Global Resets</h3>
         <p class="help-text">Wis alle geselecteerde keuzes van alle deelnemers uit de gehele database voor een nieuwe dag.</p>
         <button class="btn btn-danger" onclick="resetAlleKeuzesGlobal()">🧹 Reset Alle Deelnemer Keuzes (Alle Kampen)</button>
       </div>
@@ -238,7 +258,7 @@
   </div>
 </div>
 
-<!-- PRINT CONTAINER (INFORMATIEF INGEDEELD PER TIJDSSTIP) -->
+<!-- PRINT CONTAINER (PER TIJDSSTIP) -->
 <div id="printContainer" class="print-only"></div>
 
 <!-- MODAL DIALOG -->
