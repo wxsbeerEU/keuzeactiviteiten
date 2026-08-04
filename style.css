@@ -234,7 +234,22 @@ body {
 
 .deelnemer-card:hover { border-color: #cce2b5; box-shadow: var(--shadow-md); }
 .deelnemer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #f0f4ec; padding-bottom: 10px; }
+
+.deelnemer-info-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .deelnemer-naam { font-size: 1.25rem; font-weight: 800; color: var(--secondary); }
+.deelnemer-leeftijd-tag {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
 
 .status-tag { font-size: 0.8rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; }
 .status-tag.complete { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
@@ -256,13 +271,12 @@ body {
 .deelnemers-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag { background: white; color: var(--secondary); padding: 5px 12px; border-radius: 16px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); }
 
-/* TAB 3: BEHEERPANEEL & LEEFTIJD / DUBBELE BLOKKEN INPUTS */
+/* TAB 3: BEHEERPANEEL & STRAKKE INVOER RONDOM CAPACITEIT & LEEFTIJD */
 .admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .full-width { grid-column: 1 / -1 !important; width: 100%; }
 
 .bg-stats { background: #f0f7e8 !important; border-color: #cce2b5 !important; }
 .stats-header h3 { margin-top: 0; margin-bottom: 16px; color: var(--secondary); }
-.developer-badge { background: white; color: var(--secondary); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; border: 1px solid var(--border); }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center; }
 .stat-box { background: white; padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
