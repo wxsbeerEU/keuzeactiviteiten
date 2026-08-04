@@ -35,6 +35,22 @@ async function hashWachtwoord(wachtwoord) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Bepaal de huidige leeftijd in jaren op basis van de geboortedatum (YYYY-MM-DD)
+function berekenLeeftijd(geboortedatumStr) {
+  if (!geboortedatumStr) return null;
+  const geboorteDatum = new Date(geboortedatumStr);
+  if (isNaN(geboorteDatum.getTime())) return null;
+
+  const vandaag = new Date();
+  let leeftijd = vandaag.getFullYear() - geboorteDatum.getFullYear();
+  const m = vandaag.getMonth() - geboorteDatum.getMonth();
+  
+  if (m < 0 || (m === 0 && vandaag.getDate() < geboorteDatum.getDate())) {
+    leeftijd--;
+  }
+  return leeftijd;
+}
+
 function sorteerOpNaam(array) {
   if (!Array.isArray(array)) return [];
   return array.filter(item => item && item.naam).sort((a, b) => {
@@ -210,6 +226,9 @@ function renderDeelnemersFormulier(kampId) {
     const card = document.createElement('div');
     card.className = 'deelnemer-card';
 
+    const dLeeftijd = berekenLeeftijd(d.geboortedatum);
+    const leeftijdTagHtml = dLeeftijd !== null ? `<span class="deelnemer-leeftijd-tag">${dLeeftijd} jaar</span>` : '';
+
     let ingevuldePeriodes = 0;
     let gridHtml = '';
 
@@ -251,10 +270,21 @@ function renderDeelnemersFormulier(kampId) {
           const minL = parseInt(item ? item.minLeeftijd : 0) || 0;
           const maxL = parseInt(item ? item.maxLeeftijd : 0) || 0;
 
+          // AUTOMATISCHE CHECK OP LEEFTIJD DEELNEMER
+          let isTeJong = false;
+          let isTeOud = false;
+          if (dLeeftijd !== null) {
+            if (minL > 0 && dLeeftijd < minL) isTeJong = true;
+            if (maxL > 0 && dLeeftijd > maxL) isTeOud = true;
+          }
+
           const isVol = max > 0 && teller >= max && geselecteerdActId !== act.id;
+          const isDisabled = (isVol || isTeJong || isTeOud) && geselecteerdActId !== act.id;
           
           let capLabel = max > 0 ? ` (${teller}/${max})` : '';
           if (isVol) capLabel += ' [VOL]';
+          if (isTeJong) capLabel += ` [Te jong: min ${minL}j]`;
+          if (isTeOud) capLabel += ` [Te oud: max ${maxL}j]`;
 
           let leeftijdLabel = '';
           if (minL > 0 && maxL > 0) leeftijdLabel = ` (${minL}-${maxL}j)`;
@@ -263,7 +293,7 @@ function renderDeelnemersFormulier(kampId) {
 
           let dubbelLabel = (p.id === 'namiddag1' && item && item.isDubbel) ? ' ⏩ (N1+N2)' : '';
 
-          options += `<option value="${act.id}" ${geselecteerdActId === act.id ? 'selected' : ''} ${isVol ? 'disabled' : ''}>${act.naam}${leeftijdLabel}${dubbelLabel}${capLabel}</option>`;
+          options += `<option value="${act.id}" ${geselecteerdActId === act.id ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}>${act.naam}${leeftijdLabel}${dubbelLabel}${capLabel}</option>`;
         });
       }
 
@@ -282,7 +312,10 @@ function renderDeelnemersFormulier(kampId) {
 
     card.innerHTML = `
       <div class="deelnemer-header">
-        <span class="deelnemer-naam">${d.naam}</span>
+        <div class="deelnemer-info-group">
+          <span class="deelnemer-naam">${d.naam}</span>
+          ${leeftijdTagHtml}
+        </div>
         ${statusBadge}
       </div>
       <div class="periodes-grid">${gridHtml}</div>
@@ -526,6 +559,7 @@ window.onBeheerKampSelectionChange = function() {
   });
 };
 
+// IMPORTEER DEELNEMERS VIA CSV MET GEBOORTEDATUM
 window.importeerDeelnemersCSV = function() {
   const fileInput = document.getElementById('csvFileInput');
   const gekozenKampId = document.getElementById('csvStandaardKampSelect').value;
@@ -546,19 +580,30 @@ window.importeerDeelnemersCSV = function() {
       if (!lijn.trim()) return;
       const delen = lijn.split(',');
       const naam = delen[0].replace(/"/g, '').trim();
-      let kampNaam = delen[1] ? delen[1].replace(/"/g, '').trim() : '';
+      let optie2 = delen[1] ? delen[1].replace(/"/g, '').trim() : '';
+      let optie3 = delen[2] ? delen[2].replace(/"/g, '').trim() : '';
 
       if (naam && naam.toLowerCase() !== 'naam' && naam.toLowerCase() !== 'deelnemer') {
         let doelKampId = gekozenKampId;
+        let geboortedatum = '';
 
-        if (!doelKampId && kampNaam) {
-          const gevondenKamp = appData.deelkampen.find(k => k.naam.toLowerCase() === kampNaam.toLowerCase());
-          if (gevondenKamp) doelKampId = gevondenKamp.id;
+        // Check of optie2 een kampnaam is
+        if (!doelKampId && optie2) {
+          const gevondenKamp = appData.deelkampen.find(k => k.naam.toLowerCase() === optie2.toLowerCase());
+          if (gevondenKamp) {
+            doelKampId = gevondenKamp.id;
+            geboortedatum = optie3;
+          } else if (/^\d{4}-\d{2}-\d{2}$/.test(optie2)) {
+            // optie2 is een geboortedatum YYYY-MM-DD
+            geboortedatum = optie2;
+          }
+        } else if (optie2 && /^\d{4}-\d{2}-\d{2}$/.test(optie2)) {
+          geboortedatum = optie2;
         }
 
         if (doelKampId) {
           const uniekId = `d-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 4)}`;
-          appData.deelnemers.push({ id: uniekId, naam: naam, kampId: doelKampId });
+          appData.deelnemers.push({ id: uniekId, naam: naam, kampId: doelKampId, geboortedatum: geboortedatum });
           toegevoegdAantal++;
         }
       }
@@ -744,18 +789,21 @@ window.voegKampToe = async function() {
 };
 
 window.voegDeelnemerToe = async function() {
-  const input = document.getElementById('nieuwDeelnemerNaam');
+  const inputNaam = document.getElementById('nieuwDeelnemerNaam');
+  const inputGebDatum = document.getElementById('nieuwDeelnemerGeboortedatum');
   const kampId = document.getElementById('nieuwDeelnemerKamp').value;
-  const naam = input.value.trim();
+  const naam = inputNaam.value.trim();
+  const geboortedatum = inputGebDatum ? inputGebDatum.value : '';
 
   if (!naam || !kampId) return showModal("Fout", "Vul een naam in en kies een kamp.");
 
-  const nieuw = { id: `d-${Date.now()}`, naam: naam, kampId: kampId };
+  const nieuw = { id: `d-${Date.now()}`, naam: naam, kampId: kampId, geboortedatum: geboortedatum };
   appData.deelnemers.push(nieuw);
   appData.deelnemers = sorteerOpNaam(appData.deelnemers);
 
   await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
-  input.value = '';
+  inputNaam.value = '';
+  if (inputGebDatum) inputGebDatum.value = '';
   
   renderBeheerLijsten();
   updateStats();
@@ -801,12 +849,14 @@ function renderBeheerLijsten() {
       <input type="text" id="beheerDeelnemerZoekInput" class="form-control table-filter-input" placeholder="🔍 Zoek deelnemer in beheer..." value="${filterZoek}" oninput="renderBeheerLijsten()">
     </div>
     <table class="admin-table">
-      <tr><th>Naam Deelnemer</th><th>Kamp</th><th>Actie</th></tr>
+      <tr><th>Naam Deelnemer</th><th>Leeftijd</th><th>Kamp</th><th>Actie</th></tr>
       ${gefilterdeDeelnemers.slice(0, 100).map(d => {
         const kamp = appData.deelkampen.find(k => k.id === d.kampId);
+        const l = berekenLeeftijd(d.geboortedatum);
         return `
           <tr>
             <td><strong>${d.naam}</strong></td>
+            <td>${l !== null ? `${l} jr (${d.geboortedatum})` : 'Onbekend'}</td>
             <td>${kamp ? kamp.naam : 'Geen kamp'}</td>
             <td><button class="btn btn-danger btn-sm" onclick="verwijderDeelnemer('${d.id}')">Wissen</button></td>
           </tr>
@@ -893,7 +943,11 @@ window.updateOverzicht = function() {
             <h4>${act.naam}</h4>
             <p>${ingeschreven.length} deelnemer(s)</p>
             <div class="deelnemers-tags">
-              ${ingeschreven.map(d => `<span class="tag">${d.naam}</span>`).join('')}
+              ${ingeschreven.map(d => {
+                const l = berekenLeeftijd(d.geboortedatum);
+                const lStr = l !== null ? ` (${l}j)` : '';
+                return `<span class="tag">${d.naam}${lStr}</span>`;
+              }).join('')}
             </div>
           </div>
         `;
@@ -955,14 +1009,14 @@ window.exportCSV = function() {
     </head>
     <body>
       <table>
-        <tr><td colspan="3" style="font-size: 16pt; font-weight: bold; color: #004b87;">Topvakantie Keuzeactiviteiten Overzicht</td></tr>
+        <tr><td colspan="4" style="font-size: 16pt; font-weight: bold; color: #004b87;">Topvakantie Keuzeactiviteiten Overzicht</td></tr>
         <tr><td></td></tr>
   `;
 
   periodes.forEach(p => {
     let heeftData = false;
-    let periodBlock = `<tr><td colspan="3" class="period-header">${p.label}</td></tr>`;
-    periodBlock += `<tr><th>Activiteit</th><th>Deelnemer</th><th>Kamp</th></tr>`;
+    let periodBlock = `<tr><td colspan="4" class="period-header">${p.label}</td></tr>`;
+    periodBlock += `<tr><th>Activiteit</th><th>Deelnemer</th><th>Leeftijd</th><th>Kamp</th></tr>`;
 
     appData.masterActiviteiten.forEach(act => {
       const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
@@ -975,10 +1029,12 @@ window.exportCSV = function() {
         heeftData = true;
         ingeschreven.forEach(d => {
           const kamp = appData.deelkampen.find(k => k.id === d.kampId);
+          const l = berekenLeeftijd(d.geboortedatum);
           periodBlock += `
             <tr>
               <td class="act-header">${act.naam}</td>
               <td>${d.naam}</td>
+              <td>${l !== null ? `${l} jaar` : ''}</td>
               <td>${kamp ? kamp.naam : ''}</td>
             </tr>
           `;
@@ -1038,17 +1094,20 @@ window.onbeforeprint = function() {
                   <th class="print-checkbox-col">Aanw.</th>
                   <th>#</th>
                   <th>Naam Deelnemer</th>
+                  <th>Leeftijd</th>
                   <th>Kamp</th>
                 </tr>
               </thead>
               <tbody>
                 ${ingeschreven.map((d, index) => {
                   const kamp = appData.deelkampen.find(k => k.id === d.kampId);
+                  const l = berekenLeeftijd(d.geboortedatum);
                   return `
                     <tr>
                       <td class="print-checkbox-col"><span class="print-checkbox-box"></span></td>
                       <td>${index + 1}</td>
                       <td><strong>${d.naam}</strong></td>
+                      <td>${l !== null ? `${l} j` : ''}</td>
                       <td>${kamp ? kamp.naam : ''}</td>
                     </tr>
                   `;
