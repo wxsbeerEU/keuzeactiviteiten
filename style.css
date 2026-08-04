@@ -28,7 +28,7 @@ body {
   background-color: var(--bg);
   color: var(--text);
   margin: 0;
-  padding: 0 0 32px 0;
+  padding: 0;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -133,7 +133,8 @@ body {
 .app-container {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 20px 40px 20px;
+  min-height: calc(100vh - 180px);
 }
 
 .tab-content { display: none; }
@@ -255,12 +256,14 @@ body {
 .deelnemers-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag { background: white; color: var(--secondary); padding: 5px 12px; border-radius: 16px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); }
 
-/* TAB 3: BEHEERPANEEL & STRAKKE INVOER RONDOM CAPACITEIT & LEEFTIJD */
+/* TAB 3: BEHEERPANEEL & LEEFTIJD / DUBBELE BLOKKEN INPUTS */
 .admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .full-width { grid-column: 1 / -1 !important; width: 100%; }
 
 .bg-stats { background: #f0f7e8 !important; border-color: #cce2b5 !important; }
 .stats-header h3 { margin-top: 0; margin-bottom: 16px; color: var(--secondary); }
+.developer-badge { background: white; color: var(--secondary); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; border: 1px solid var(--border); }
+
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center; }
 .stat-box { background: white; padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 .stat-num { display: block; font-size: 2rem; font-weight: 800; color: var(--secondary); }
@@ -277,7 +280,6 @@ body {
 .beheer-item { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; background: white; padding: 12px; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; }
 .beheer-item-row { display: flex; align-items: center; gap: 8px; }
 
-/* GEOPTIMALISEERDE STRAKKE CONFIGURATIEBALK RONDOM LEEFTIJD & MAX PERS */
 .beheer-item-config {
   display: flex;
   flex-direction: column;
@@ -347,7 +349,7 @@ body {
 
 .table-filter-input { max-width: 320px; }
 
-/* Layout Helpers */
+/* Layout Helpers & Footer */
 .flex-grow { flex-grow: 1; }
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .align-center { text-align: center; }
@@ -368,12 +370,21 @@ body {
 .empty-state h3 { margin: 0 0 6px 0; color: var(--secondary); font-size: 1.3rem; }
 .empty-state p { margin: 0; font-size: 0.95rem; }
 
+.app-footer {
+  text-align: center;
+  padding: 20px 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+
 /* PRINT STYLING - ELKE ACTIVITEIT OP EEN EIGEN PAGINA */
 .print-only { display: none; }
 
 @media print {
   body { background: white; color: black; padding: 0; }
-  .app-header-full, .app-container { display: none !important; }
+  .app-header-full, .app-container, .app-footer { display: none !important; }
   .print-only { display: block !important; padding: 0; }
 
   .print-page {
