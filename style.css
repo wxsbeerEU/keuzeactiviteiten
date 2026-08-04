@@ -33,7 +33,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Header Banner - Volledige breedte (100vw) */
+/* Header Banner - Volledige breedte */
 .app-header-full {
   width: 100%;
   background: linear-gradient(135deg, #70b22a 0%, #8bc53f 100%);
@@ -58,7 +58,6 @@ body {
   gap: 20px;
 }
 
-/* MOOIE WITTE KADER ROND LOGO MET AFGERONDE HOEKEN & SUBTIELE SCHADUW */
 .brand-logo-card {
   background: white;
   padding: 8px 14px;
@@ -242,6 +241,7 @@ body {
 
 .periodes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .periode-box { background: #f8faf6; padding: 14px; border-radius: var(--radius-sm); border: 1px solid #e3ebe0; }
+.periode-box.periode-disabled { opacity: 0.65; background: #f1f5f9; }
 .periode-title { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--primary-hover); margin-bottom: 8px; letter-spacing: 0.03em; }
 
 /* TAB 2: OVERZICHT PER ACTIVITEIT */
@@ -255,7 +255,7 @@ body {
 .deelnemers-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag { background: white; color: var(--secondary); padding: 5px 12px; border-radius: 16px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); }
 
-/* TAB 3: BEHEERPANEEL */
+/* TAB 3: BEHEERPANEEL & LEEFTIJD / DUBBELE BLOKKEN INPUTS */
 .admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .full-width { grid-column: 1 / -1 !important; width: 100%; }
 
@@ -274,12 +274,13 @@ body {
 .periodes-aanbod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; }
 .periode-aanbod-box { background: #f8faf6; padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 
-.beheer-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; background: white; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; }
+.beheer-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; background: white; padding: 12px; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; }
 .beheer-item-row { display: flex; align-items: center; gap: 8px; }
-.max-input-group { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-muted); }
-.max-input-group input { width: 65px !important; padding: 4px 6px; font-size: 0.8rem; }
+.max-input-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+.max-input-group input[type="number"] { width: 55px !important; padding: 4px 6px; font-size: 0.8rem; }
+.double-block-label { font-size: 0.78rem; font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 4px; margin-top: 4px; cursor: pointer; }
 
-.checkbox-list { display: flex; flex-direction: column; max-height: 380px; overflow-y: auto; }
+.checkbox-list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
 .admin-grid-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 .admin-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
