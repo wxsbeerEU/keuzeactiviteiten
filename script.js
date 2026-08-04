@@ -213,7 +213,6 @@ function renderDeelnemersFormulier(kampId) {
     let ingevuldePeriodes = 0;
     let gridHtml = '';
 
-    // Check of Namiddag 1 een dubbele activiteit (N1+N2) is
     const n1GekozenActId = appData.keuzes[`${d.id}_namiddag1`];
     const n1ItemInfo = (kampAanbod['namiddag1'] || []).find(i => i.actId === n1GekozenActId);
     const isDubbelGekozenInN1 = n1ItemInfo && n1ItemInfo.isDubbel;
@@ -226,7 +225,6 @@ function renderDeelnemersFormulier(kampId) {
       let options = '';
       let isVakGeblokkeerd = !heeftAanbod;
 
-      // Als Namiddag 1 een dubbele activiteit is, wordt Namiddag 2 automatisch geblokkeerd en overgenomen
       if (p.id === 'namiddag2' && isDubbelGekozenInN1) {
         isVakGeblokkeerd = true;
         const dubbeleActObj = appData.masterActiviteiten.find(a => a.id === n1GekozenActId);
@@ -259,9 +257,9 @@ function renderDeelnemersFormulier(kampId) {
           if (isVol) capLabel += ' [VOL]';
 
           let leeftijdLabel = '';
-          if (minL > 0 && maxL > 0) leeftijdLabel = ` [${minL}-${maxL}j]`;
-          else if (minL > 0) leeftijdLabel = ` [${minL}+j]`;
-          else if (maxL > 0) leeftijdLabel = ` [tot ${maxL}j]`;
+          if (minL > 0 && maxL > 0) leeftijdLabel = ` (${minL}-${maxL}j)`;
+          else if (minL > 0) leeftijdLabel = ` (${minL}+j)`;
+          else if (maxL > 0) leeftijdLabel = ` (tot ${maxL}j)`;
 
           let dubbelLabel = (p.id === 'namiddag1' && item && item.isDubbel) ? ' ⏩ (N1+N2)' : '';
 
@@ -356,7 +354,6 @@ window.onKeuzeChange = function(kampId) {
     if (s.value && s.value !== 'unselected') {
       appData.keuzes[`${dId}_${p}`] = s.value;
 
-      // Automatische doorschakeling als Namiddag 1 dubbel blok is!
       if (p === 'namiddag1') {
         const itemInfo = (kampAanbod['namiddag1'] || []).find(i => i.actId === s.value);
         if (itemInfo && itemInfo.isDubbel) {
@@ -460,6 +457,7 @@ window.selecteerAlleBeheerKampen = function(selecteer) {
   window.onBeheerKampSelectionChange();
 };
 
+// HERSTELDE EN STRAKKERE OPBOUW VAN HET DAGAANBOD PANEEL
 window.onBeheerKampSelectionChange = function() {
   const geselecteerdeKampIds = Array.from(document.querySelectorAll('.beheer-kamp-cb:checked')).map(cb => cb.value);
   const panel = document.getElementById('beheerAanbodPanel');
@@ -493,11 +491,10 @@ window.onBeheerKampSelectionChange = function() {
       const maxLeeftijd = bestaand ? (bestaand.maxLeeftijd || 0) : 0;
       const isDubbel = bestaand ? !!bestaand.isDubbel : false;
 
-      // Optie "Duurt N1+N2" enkel tonen bij Namiddag 1!
       const dubbelCheckboxHtml = (p === 'namiddag1') ? `
         <label class="double-block-label">
           <input type="checkbox" class="is-dubbel-beheer-${p}" data-act="${act.id}" ${isDubbel ? 'checked' : ''}>
-          <span>⏩ Duurt Namiddag 1 + 2 (dubbel blok)</span>
+          <span>⏩ Duurt Namiddag 1 + 2 (dubbel)</span>
         </label>
       ` : '';
 
@@ -507,15 +504,23 @@ window.onBeheerKampSelectionChange = function() {
             <input type="checkbox" class="cb-beheer-${p}" value="${act.id}" ${isChecked}>
             <strong>${act.naam}</strong>
           </div>
-          <div class="max-input-group">
-            <label>Max pers:</label>
-            <input type="number" min="0" class="max-beheer-${p}" data-act="${act.id}" value="${maxVal}">
-            <label>Min.j:</label>
-            <input type="number" min="0" class="minL-beheer-${p}" data-act="${act.id}" value="${minLeeftijd}">
-            <label>Max.j:</label>
-            <input type="number" min="0" class="maxL-beheer-${p}" data-act="${act.id}" value="${maxLeeftijd}">
+          <div class="beheer-item-config">
+            <div class="config-row">
+              <div class="config-field">
+                <label>Max pers:</label>
+                <input type="number" min="0" class="max-beheer-${p}" data-act="${act.id}" value="${maxVal}">
+              </div>
+              <div class="config-field">
+                <label>Min.j:</label>
+                <input type="number" min="0" class="minL-beheer-${p}" data-act="${act.id}" value="${minLeeftijd}">
+              </div>
+              <div class="config-field">
+                <label>Max.j:</label>
+                <input type="number" min="0" class="maxL-beheer-${p}" data-act="${act.id}" value="${maxLeeftijd}">
+              </div>
+            </div>
+            ${dubbelCheckboxHtml}
           </div>
-          ${dubbelCheckboxHtml}
         </div>
       `;
     }).join('');
