@@ -38,7 +38,7 @@ body {
   width: 100%;
   background: linear-gradient(135deg, #70b22a 0%, #8bc53f 100%);
   color: white;
-  padding: 16px 0;
+  padding: 18px 0;
   margin-bottom: 28px;
   box-shadow: 0 6px 20px rgba(112, 178, 42, 0.22);
 }
@@ -58,15 +58,19 @@ body {
   gap: 20px;
 }
 
-.brand-logo-container {
-  background: transparent;
-  padding: 0;
+/* MOOIE WITTE KADER ROND LOGO MET AFGERONDE HOEKEN & SUBTIELE SCHADUW */
+.brand-logo-card {
+  background: white;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
 }
 
 .brand-logo {
-  height: 64px;
+  height: 56px;
   width: auto;
   object-fit: contain;
 }
@@ -151,34 +155,6 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-}
-
-.badge-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  min-width: 180px;
-}
-
-.badge-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.badge {
-  background: var(--secondary);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 30px;
-  font-weight: 700;
-  font-size: 0.88rem;
-  box-shadow: 0 2px 8px rgba(0, 75, 135, 0.2);
-  display: inline-block;
-  white-space: nowrap;
 }
 
 .form-label { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; font-size: 0.98rem; color: var(--text); }
@@ -406,7 +382,6 @@ body {
 
 @media (max-width: 768px) {
   .selector-card { flex-direction: column; align-items: stretch; }
-  .badge-container { align-self: flex-start; }
   .periodes-grid, .periodes-aanbod-grid, .stats-grid, .admin-grid, .admin-grid-inner { grid-template-columns: 1fr; }
   .nav-tabs-header { flex-wrap: wrap; }
 }
