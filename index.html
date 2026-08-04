@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <!-- NAVIGATIE TABS (RECHTS IN HEADER) -->
+    <!-- NAVIGATIE TABS -->
     <nav class="nav-tabs-header" role="tablist">
       <button class="tab-btn active" id="btn-tab-selectie" onclick="openTab('selectie')" role="tab">
         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -153,10 +153,11 @@
     <!-- INHOUD BEHEER -->
     <div id="beheerInhoud" style="display:none;" class="admin-grid">
       
-      <!-- STATISTIEKEN -->
+      <!-- STATISTIEKEN & DEVELOPER CREDITS -->
       <div class="card full-width bg-stats">
-        <div class="stats-header">
+        <div class="stats-header flex-between align-items-center">
           <h3>Systeem Dashboard & Live Data</h3>
+          <span class="developer-badge">⚡ Developed by Nino Wullaert</span>
         </div>
         <div class="stats-grid">
           <div class="stat-box">
@@ -310,7 +311,14 @@
   </div>
 </div>
 
-<!-- PRINT CONTAINER (PER ACTIVITEIT OP APPARTE PAGINA) -->
+<!-- FOOTER CREDITS -->
+<footer class="app-footer">
+  <div class="footer-inner">
+    <p>Topvakantie Keuzeactiviteiten System &bull; Made by <strong>Nino Wullaert</strong></p>
+  </div>
+</footer>
+
+<!-- PRINT CONTAINER -->
 <div id="printContainer" class="print-only"></div>
 
 <!-- MODAL DIALOG -->
