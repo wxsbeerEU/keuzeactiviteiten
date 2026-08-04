@@ -1,1023 +1,388 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCh9PosNaH57-_jxhqhd-eR2xy0e7qn4eg",
-  authDomain: "keuze-activiteiten.firebaseapp.com",
-  databaseURL: "https://keuze-activiteiten-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "keuze-activiteiten",
-  storageBucket: "keuze-activiteiten.firebasestorage.app",
-  messagingSenderId: "17400921565",
-  appId: "1:17400921565:web:93b28bc941303400694a34"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const STANDAARD_HASH = "b46be1c02ff4b9f2913f6312a149c9528643efc62cfd3bf49557457497d51ee2";
-
-let appData = {
-  deelkampen: [],
-  deelnemers: [],
-  masterActiviteiten: [],
-  periodeAanbod: {},
-  keuzes: {},
-  adminHash: STANDAARD_HASH
-};
-
-let isAdminIngelogd = false;
-
-async function hashWachtwoord(wachtwoord) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(wachtwoord);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+:root {
+  --primary: #70b22a;          /* Topvakantie Groen */
+  --primary-hover: #5d9622;
+  --primary-light: #f0f7e8;
+  --secondary: #004b87;        /* Topvakantie Blauw */
+  --secondary-hover: #003663;
+  --bg: #f4f7f2;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --border: #dbe4d5;
+  --border-light: #e2e8f0;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-light: #fef2f2;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
 }
 
-function sorteerOpNaam(array) {
-  if (!Array.isArray(array)) return [];
-  return array.filter(item => item && item.naam).sort((a, b) => {
-    const naamA = String(a.naam || '');
-    const naamB = String(b.naam || '');
-    return naamA.localeCompare(naamB, 'nl', { sensitivity: 'base' });
-  });
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 0 0 32px 0;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-function converteerNaarArray(data) {
-  if (!data) return [];
-  if (Array.isArray(data)) return data.filter(Boolean);
-  return Object.keys(data).map(key => {
-    const val = data[key];
-    if (typeof val === 'object' && val !== null) {
-      return { id: val.id || key, ...val };
-    }
-    return null;
-  }).filter(Boolean);
+/* Header Banner - Volledige breedte */
+.app-header-full {
+  width: 100%;
+  background: linear-gradient(135deg, #70b22a 0%, #8bc53f 100%);
+  color: white;
+  padding: 18px 0;
+  margin-bottom: 28px;
+  box-shadow: 0 6px 20px rgba(112, 178, 42, 0.22);
 }
 
-async function laadFirebaseData() {
-  const dbRef = ref(db);
-  try {
-    const snapshot = await get(child(dbRef, 'topvakantie'));
-    if (snapshot.exists()) {
-      const rawData = snapshot.val();
-      
-      appData.deelkampen = sorteerOpNaam(converteerNaarArray(rawData.deelkampen));
-      appData.deelnemers = sorteerOpNaam(converteerNaarArray(rawData.deelnemers));
-      appData.masterActiviteiten = sorteerOpNaam(converteerNaarArray(rawData.masterActiviteiten));
-      appData.periodeAanbod = rawData.periodeAanbod || {};
-      appData.keuzes = rawData.keuzes || {};
-      appData.adminHash = rawData.adminHash || STANDAARD_HASH;
-    } else {
-      await set(ref(db, 'topvakantie'), appData);
-    }
-    initApp();
-  } catch (error) {
-    console.error("Firebase Laad Fout:", error);
-    showModal("Fout bij laden", "Kon geen verbinding maken met de database. Controleer de Firebase Rules instellingen.");
-  }
+.header-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-function initApp() {
-  vulDropdowns();
-  updateOverzicht();
-  updateStats();
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-function vulDropdowns() {
-  const kampSelect = document.getElementById('kampSelect');
-  const overzichtSelect = document.getElementById('overzichtKampSelect');
-  const nieuwDeelnemerKamp = document.getElementById('nieuwDeelnemerKamp');
-  const csvStandaardKampSelect = document.getElementById('csvStandaardKampSelect');
-
-  if (kampSelect) kampSelect.innerHTML = '<option value="">-- Selecteer een Deelkamp --</option>';
-  if (overzichtSelect) overzichtSelect.innerHTML = '<option value="">-- Alle Deelkampen Samen --</option>';
-  if (nieuwDeelnemerKamp) nieuwDeelnemerKamp.innerHTML = '<option value="">-- Kies Kamp --</option>';
-  if (csvStandaardKampSelect) csvStandaardKampSelect.innerHTML = '<option value="">-- Uit CSV Lezen --</option>';
-
-  appData.deelkampen.forEach(kamp => {
-    const opt = `<option value="${kamp.id}">${kamp.naam}</option>`;
-    if (kampSelect) kampSelect.innerHTML += opt;
-    if (overzichtSelect) overzichtSelect.innerHTML += opt;
-    if (nieuwDeelnemerKamp) nieuwDeelnemerKamp.innerHTML += opt;
-    if (csvStandaardKampSelect) csvStandaardKampSelect.innerHTML += opt;
-  });
+.brand-logo-card {
+  background: white;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
 }
 
-function updateStats() {
-  if (!isAdminIngelogd) return;
-  const statKampen = document.getElementById('statKampen');
-  const statDeelnemers = document.getElementById('statDeelnemers');
-  const statMasterAct = document.getElementById('statMasterAct');
-  const statKeuzes = document.getElementById('statKeuzes');
-
-  if (statKampen) statKampen.textContent = appData.deelkampen.length;
-  if (statDeelnemers) statDeelnemers.textContent = appData.deelnemers.length;
-  if (statMasterAct) statMasterAct.textContent = appData.masterActiviteiten.length;
-  if (statKeuzes) statKeuzes.textContent = Object.keys(appData.keuzes).length;
+.brand-logo {
+  height: 56px;
+  width: auto;
+  object-fit: contain;
 }
 
-function getAantalActievePeriodes(kampId) {
-  const kampAanbod = appData.periodeAanbod[kampId] || {};
-  let actiefCount = 0;
-  ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-    const items = kampAanbod[p] || [];
-    if (items.length > 0) actiefCount++;
-  });
-  return actiefCount;
+.brand-title {
+  margin: 0 0 2px 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.02em;
 }
 
-// 1. KEUZES INVOEREN
-window.onKampChange = function() {
-  const kampSelect = document.getElementById('kampSelect');
-  if (!kampSelect) return;
-  const kampId = kampSelect.value;
-  
-  const container = document.getElementById('deelnemersContainer');
-  const actionsBar = document.getElementById('actionsBar');
-  const selectieHeader = document.getElementById('selectieHeader');
-
-  container.innerHTML = '';
-
-  if (!kampId) {
-    if (actionsBar) actionsBar.style.display = 'none';
-    if (selectieHeader) selectieHeader.style.display = 'none';
-    container.innerHTML = `
-      <div class="empty-state">
-        <svg class="empty-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-        <h3>Geen Deelkamp Geselecteerd</h3>
-        <p>Kies hierboven een deelkamp om de lijst van deelnemers te openen en hun keuzes in te voeren.</p>
-      </div>
-    `;
-    return;
-  }
-
-  if (actionsBar) actionsBar.style.display = 'flex';
-  if (selectieHeader) selectieHeader.style.display = 'flex';
-
-  renderDeelnemersFormulier(kampId);
-};
-
-function berekenAantallen(kampId) {
-  const aantallen = {};
-  const deelnemersInKamp = appData.deelnemers.filter(d => d.kampId === kampId);
-
-  deelnemersInKamp.forEach(d => {
-    ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-      const actId = appData.keuzes[`${d.id}_${p}`];
-      if (actId && actId !== 'unselected') {
-        const sleutel = `${p}_${actId}`;
-        aantallen[sleutel] = (aantallen[sleutel] || 0) + 1;
-      }
-    });
-  });
-
-  return aantallen;
+.brand-subtitle {
+  margin: 0;
+  opacity: 0.95;
+  font-size: 0.88rem;
+  font-weight: 500;
 }
 
-function renderDeelnemersFormulier(kampId) {
-  const container = document.getElementById('deelnemersContainer');
-  let deelnemers = appData.deelnemers.filter(d => d.kampId === kampId);
-  deelnemers = sorteerOpNaam(deelnemers);
-
-  const kampAanbod = appData.periodeAanbod[kampId] || {};
-  const huidigeAantallen = berekenAantallen(kampId);
-  const maxPeriodesVoorKamp = getAantalActievePeriodes(kampId);
-
-  const zoekTerm = document.getElementById('deelnemerZoekInput')?.value.toLowerCase().trim() || '';
-  if (zoekTerm) {
-    deelnemers = deelnemers.filter(d => d.naam && d.naam.toLowerCase().includes(zoekTerm));
-  }
-
-  updateVoortgangsBalk(kampId);
-
-  if (deelnemers.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>Geen deelnemers gevonden voor dit kamp. Voeg ze toe via "Beheer & Data".</p></div>';
-    return;
-  }
-
-  const periodes = [
-    { id: 'voormiddag', label: 'Voormiddag' },
-    { id: 'namiddag1', label: 'Namiddag 1' },
-    { id: 'namiddag2', label: 'Namiddag 2' },
-    { id: 'avond', label: 'Avond' }
-  ];
-
-  container.innerHTML = '';
-
-  deelnemers.forEach(d => {
-    const card = document.createElement('div');
-    card.className = 'deelnemer-card';
-
-    let ingevuldePeriodes = 0;
-    let gridHtml = '';
-
-    periodes.forEach(p => {
-      const toegestaneItems = kampAanbod[p.id] || [];
-      const heeftAanbod = toegestaneItems.length > 0;
-      const key = `${d.id}_${p.id}`;
-
-      let options = '';
-
-      if (!heeftAanbod) {
-        options = `<option value="unselected" selected disabled>-- Geen Aanbod --</option>`;
-      } else {
-        const geselecteerdActId = appData.keuzes[key] !== undefined ? appData.keuzes[key] : 'unselected';
-
-        if (geselecteerdActId && geselecteerdActId !== 'unselected') {
-          ingevuldePeriodes++;
-        }
-
-        options = `<option value="unselected" ${geselecteerdActId === 'unselected' ? 'selected' : ''}>-- Kies Activiteit --</option>`;
-
-        const mogelijkeMasterAct = appData.masterActiviteiten.filter(a => toegestaneItems.some(item => item.actId === a.id));
-        sorteerOpNaam(mogelijkeMasterAct);
-
-        mogelijkeMasterAct.forEach(act => {
-          const item = toegestaneItems.find(i => i.actId === act.id);
-          const teller = huidigeAantallen[`${p.id}_${act.id}`] || 0;
-          const max = parseInt(item ? item.max : 0) || 0;
-          const isVol = max > 0 && teller >= max && geselecteerdActId !== act.id;
-          
-          let capLabel = max > 0 ? ` (${teller}/${max})` : '';
-          if (isVol) capLabel += ' [VOL]';
-
-          options += `<option value="${act.id}" ${geselecteerdActId === act.id ? 'selected' : ''} ${isVol ? 'disabled' : ''}>${act.naam}${capLabel}</option>`;
-        });
-      }
-
-      gridHtml += `
-        <div class="periode-box ${!heeftAanbod ? 'periode-disabled' : ''}">
-          <div class="periode-title">${p.label}</div>
-          <select class="form-control" data-deelnemer="${d.id}" data-periode="${p.id}" ${!heeftAanbod ? 'disabled' : ''} onchange="onKeuzeChange('${kampId}')">${options}</select>
-        </div>
-      `;
-    });
-
-    const isVolledig = maxPeriodesVoorKamp === 0 || ingevuldePeriodes >= maxPeriodesVoorKamp;
-    const statusBadge = isVolledig 
-      ? `<span class="status-tag complete">✓ ${ingevuldePeriodes}/${maxPeriodesVoorKamp} Ingesteld</span>` 
-      : `<span class="status-tag incomplete">⚠️ ${ingevuldePeriodes}/${maxPeriodesVoorKamp} Ingesteld</span>`;
-
-    card.innerHTML = `
-      <div class="deelnemer-header">
-        <span class="deelnemer-naam">${d.naam}</span>
-        ${statusBadge}
-      </div>
-      <div class="periodes-grid">${gridHtml}</div>
-    `;
-
-    container.appendChild(card);
-  });
+/* Navigatie Tabs Rechts in de Header */
+.nav-tabs-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
-function updateVoortgangsBalk(kampId) {
-  const deelnemers = appData.deelnemers.filter(d => d.kampId === kampId);
-  const maxPeriodesVoorKamp = getAantalActievePeriodes(kampId);
-  const totaalKeuzes = deelnemers.length * maxPeriodesVoorKamp;
-  
-  let ingevuld = 0;
-  let volledigAantal = 0;
-
-  deelnemers.forEach(d => {
-    let dIngevuld = 0;
-    ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-      const toegestaneItems = (appData.periodeAanbod[kampId] || {})[p] || [];
-      if (toegestaneItems.length > 0) {
-        const val = appData.keuzes[`${d.id}_${p}`];
-        if (val && val !== 'unselected') {
-          ingevuld++;
-          dIngevuld++;
-        }
-      }
-    });
-    if (maxPeriodesVoorKamp === 0 || dIngevuld >= maxPeriodesVoorKamp) volledigAantal++;
-  });
-
-  const percentage = totaalKeuzes > 0 ? Math.round((ingevuld / totaalKeuzes) * 100) : (deelnemers.length > 0 ? 100 : 0);
-  
-  const textElem = document.getElementById('progressText');
-  const subTextElem = document.getElementById('progressSubText');
-  const fillElem = document.getElementById('progressBarFill');
-
-  if (textElem) textElem.textContent = `${ingevuld} / ${totaalKeuzes} keuzes (${percentage}%)`;
-  if (subTextElem) subTextElem.textContent = `${volledigAantal} van de ${deelnemers.length} deelnemers volledig ingesteld`;
-  if (fillElem) fillElem.style.width = `${percentage}%`;
+.tab-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 10px 18px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(4px);
 }
 
-window.filterDeelnemersLijst = function() {
-  const clearBtn = document.getElementById('searchClearBtn');
-  const input = document.getElementById('deelnemerZoekInput');
-  if (clearBtn && input) clearBtn.style.display = input.value ? 'block' : 'none';
-
-  const kampId = document.getElementById('kampSelect').value;
-  if (kampId) renderDeelnemersFormulier(kampId);
-};
-
-window.clearSearchInput = function() {
-  const input = document.getElementById('deelnemerZoekInput');
-  if (input) {
-    input.value = '';
-    filterDeelnemersLijst();
-  }
-};
-
-window.onKeuzeChange = function(kampId) {
-  const selects = document.querySelectorAll('select[data-deelnemer]');
-  selects.forEach(s => {
-    const dId = s.dataset.deelnemer;
-    const p = s.dataset.periode;
-    if (s.value && s.value !== 'unselected') {
-      appData.keuzes[`${dId}_${p}`] = s.value;
-    } else {
-      delete appData.keuzes[`${dId}_${p}`];
-    }
-  });
-
-  renderDeelnemersFormulier(kampId);
-};
-
-// ROBUUSTE OPSLAG NAAR FIREBASE
-window.opslaanKeuzes = async function() {
-  const selects = document.querySelectorAll('select[data-deelnemer]');
-
-  selects.forEach(s => {
-    const dId = s.dataset.deelnemer;
-    const p = s.dataset.periode;
-    if (s.value && s.value !== 'unselected') {
-      appData.keuzes[`${dId}_${p}`] = s.value;
-    } else {
-      delete appData.keuzes[`${dId}_${p}`];
-    }
-  });
-
-  const schoneKeuzes = {};
-  Object.keys(appData.keuzes).forEach(k => {
-    if (appData.keuzes[k] && appData.keuzes[k] !== 'unselected' && appData.keuzes[k] !== 'geen') {
-      schoneKeuzes[k] = appData.keuzes[k];
-    }
-  });
-
-  try {
-    await set(ref(db, 'topvakantie/keuzes'), schoneKeuzes);
-    appData.keuzes = schoneKeuzes;
-    showModal("Opgeslagen!", "Keuzes van de deelnemers zijn succesvol opgeslagen.");
-    updateOverzicht();
-    updateStats();
-  } catch (err) {
-    console.error("Firebase Opslaan Fout:", err);
-    showModal("Fout bij opslaan", "Kon keuzes niet opslaan. Controleer of Firebase Rules op 'read: true, write: true' staan.");
-  }
-};
-
-window.resetKeuzesVanKamp = async function() {
-  const kampId = document.getElementById('kampSelect').value;
-  if (!kampId) return;
-
-  const kamp = appData.deelkampen.find(k => k.id === kampId);
-  const bevestig = confirm(`Weet je zeker dat je alle gekozen activiteiten voor het kamp "${kamp ? kamp.naam : ''}" wilt resetten?`);
-
-  if (bevestig) {
-    const deelnemersInKamp = appData.deelnemers.filter(d => d.kampId === kampId);
-    
-    deelnemersInKamp.forEach(d => {
-      ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-        delete appData.keuzes[`${d.id}_${p}`];
-      });
-    });
-
-    try {
-      await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
-      renderDeelnemersFormulier(kampId);
-      updateOverzicht();
-      showModal("Reset Voltooid", `Alle keuzes voor "${kamp ? kamp.naam : ''}" zijn gewist.`);
-    } catch (err) {
-      showModal("Fout", "Kon keuzes niet resetten.");
-    }
-  }
-};
-
-// 2. BEHEER: CHECKBOXES AANBOD & CSV IMPORT
-function renderBeheerKampCheckboxes() {
-  const grid = document.getElementById('beheerKampCheckboxesGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-
-  if (appData.deelkampen.length === 0) {
-    grid.innerHTML = '<em>Nog geen deelkampen aangemaakt.</em>';
-    return;
-  }
-
-  appData.deelkampen.forEach(kamp => {
-    grid.innerHTML += `
-      <label class="checkbox-label">
-        <input type="checkbox" class="beheer-kamp-cb" value="${kamp.id}" onchange="onBeheerKampSelectionChange()">
-        ${kamp.naam}
-      </label>
-    `;
-  });
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
 
-window.selecteerAlleBeheerKampen = function(selecteer) {
-  document.querySelectorAll('.beheer-kamp-cb').forEach(cb => cb.checked = selecteer);
-  window.onBeheerKampSelectionChange();
-};
-
-window.onBeheerKampSelectionChange = function() {
-  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.beheer-kamp-cb:checked')).map(cb => cb.value);
-  const panel = document.getElementById('beheerAanbodPanel');
-
-  if (geselecteerdeKampIds.length === 0) {
-    if (panel) panel.style.display = 'none';
-    return;
-  }
-
-  if (panel) panel.style.display = 'block';
-  const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
-  const primairKampId = geselecteerdeKampIds[0];
-  const primairAanbod = appData.periodeAanbod[primairKampId] || {};
-
-  periodes.forEach(p => {
-    const box = document.getElementById(`beheer-aanbod-${p}`);
-    if (!box) return;
-
-    const geselecteerdeItems = primairAanbod[p] || [];
-
-    if (appData.masterActiviteiten.length === 0) {
-      box.innerHTML = '<em>Geen activiteiten in Master-database.</em>';
-      return;
-    }
-
-    box.innerHTML = appData.masterActiviteiten.map(act => {
-      const bestaand = geselecteerdeItems.find(i => i.actId === act.id);
-      const isChecked = !!bestaand;
-      const maxVal = bestaand ? (bestaand.max || 0) : 0;
-
-      return `
-        <div class="beheer-item">
-          <div class="beheer-item-row">
-            <input type="checkbox" class="cb-beheer-${p}" value="${act.id}" ${isChecked}>
-            <strong>${act.naam}</strong>
-          </div>
-          <div class="max-input-group">
-            <label>Max. pers. (0 = ∞):</label>
-            <input type="number" min="0" class="max-beheer-${p}" data-act="${act.id}" value="${maxVal}">
-          </div>
-        </div>
-      `;
-    }).join('');
-  });
-};
-
-window.importeerDeelnemersCSV = function() {
-  const fileInput = document.getElementById('csvFileInput');
-  const gekozenKampId = document.getElementById('csvStandaardKampSelect').value;
-
-  if (!fileInput.files || fileInput.files.length === 0) {
-    return showModal("Fout", "Selecteer een CSV-bestand.");
-  }
-
-  const file = fileInput.files[0];
-  const reader = new FileReader();
-
-  reader.onload = async function(e) {
-    const text = e.target.result;
-    const lijnen = text.split(/\r\n|\n/);
-    let toegevoegdAantal = 0;
-
-    lijnen.forEach((lijn, index) => {
-      if (!lijn.trim()) return;
-      const delen = lijn.split(',');
-      const naam = delen[0].replace(/"/g, '').trim();
-      let kampNaam = delen[1] ? delen[1].replace(/"/g, '').trim() : '';
-
-      if (naam && naam.toLowerCase() !== 'naam' && naam.toLowerCase() !== 'deelnemer') {
-        let doelKampId = gekozenKampId;
-
-        if (!doelKampId && kampNaam) {
-          const gevondenKamp = appData.deelkampen.find(k => k.naam.toLowerCase() === kampNaam.toLowerCase());
-          if (gevondenKamp) doelKampId = gevondenKamp.id;
-        }
-
-        if (doelKampId) {
-          const uniekId = `d-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 4)}`;
-          appData.deelnemers.push({ id: uniekId, naam: naam, kampId: doelKampId });
-          toegevoegdAantal++;
-        }
-      }
-    });
-
-    if (toegevoegdAantal > 0) {
-      appData.deelnemers = sorteerOpNaam(appData.deelnemers);
-      await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
-      vulDropdowns();
-      renderBeheerLijsten();
-      updateStats();
-      showModal("Import Succesvol", `${toegevoegdAantal} deelnemers geïmporteerd!`);
-      fileInput.value = '';
-    } else {
-      showModal("Fout", "Geen geldige deelnemers gevonden of gekoppeld kamp niet herkend.");
-    }
-  };
-
-  reader.readAsText(file);
-};
-
-window.opslaanBeheerAanbodMulti = async function() {
-  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.beheer-kamp-cb:checked')).map(cb => cb.value);
-  const periodes = ['voormiddag', 'namiddag1', 'namiddag2', 'avond'];
-
-  if (geselecteerdeKampIds.length === 0) {
-    return showModal("Fout", "Selecteer minstens één kamp.");
-  }
-
-  for (const kampId of geselecteerdeKampIds) {
-    if (!appData.periodeAanbod[kampId]) appData.periodeAanbod[kampId] = {};
-
-    periodes.forEach(p => {
-      const cbs = document.querySelectorAll(`.cb-beheer-${p}:checked`);
-      const items = [];
-
-      cbs.forEach(cb => {
-        const actId = cb.value;
-        const maxInput = document.querySelector(`.max-beheer-${p}[data-act="${actId}"]`);
-        const maxVal = parseInt(maxInput ? maxInput.value : 0) || 0;
-        items.push({ actId: actId, max: maxVal });
-      });
-
-      appData.periodeAanbod[kampId][p] = items;
-    });
-
-    await set(ref(db, `topvakantie/periodeAanbod/${kampId}`), appData.periodeAanbod[kampId]);
-  }
-
-  showModal("Opgeslagen", "Het activiteitenaanbod en de capaciteit zijn opgeslagen.");
-
-  const huidigGeselecteerdKamp = document.getElementById('kampSelect').value;
-  if (huidigGeselecteerdKamp && geselecteerdeKampIds.includes(huidigGeselecteerdKamp)) {
-    renderDeelnemersFormulier(huidigGeselecteerdKamp);
-  }
-};
-
-window.resetAanbodVanGeselecteerdeKampen = async function() {
-  const geselecteerdeKampIds = Array.from(document.querySelectorAll('.beheer-kamp-cb:checked')).map(cb => cb.value);
-
-  if (geselecteerdeKampIds.length === 0) {
-    return showModal("Fout", "Selecteer eerst minstens één kamp.");
-  }
-
-  const bevestig = confirm("Weet je zeker dat je het dagaanbod voor de geselecteerde kampen wilt wissen?");
-  if (bevestig) {
-    for (const kampId of geselecteerdeKampIds) {
-      delete appData.periodeAanbod[kampId];
-      await set(ref(db, `topvakantie/periodeAanbod/${kampId}`), null);
-    }
-
-    onBeheerKampSelectionChange();
-    
-    const huidigKamp = document.getElementById('kampSelect').value;
-    if (huidigKamp && geselecteerdeKampIds.includes(huidigKamp)) {
-      renderDeelnemersFormulier(huidigKamp);
-    }
-
-    showModal("Reset Voltooid", "Het dagaanbod voor de geselecteerde kampen is gewist.");
-  }
-};
-
-window.resetAlleKeuzesGlobal = async function() {
-  const bevestig = confirm("WEET JE ZEKER dat je ALLE keuzes van ALLE deelnemers wilt wissen?");
-  if (bevestig) {
-    appData.keuzes = {};
-    await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
-
-    const huidigKamp = document.getElementById('kampSelect').value;
-    if (huidigKamp) renderDeelnemersFormulier(huidigKamp);
-    updateOverzicht();
-    updateStats();
-    showModal("Reset Voltooid", "Alle geselecteerde keuzes van alle deelnemers zijn gewist.");
-  }
-};
-
-// 3. BEHEER & LOGIN
-window.verifieerWachtwoord = async function() {
-  const input = document.getElementById('adminWachtwoordInput').value.trim();
-  if (!input) return showModal("Toegang Geweigerd", "Vul een wachtwoord in.");
-
-  const ingevoerdeHash = await hashWachtwoord(input);
-  const isStandaardWachtwoord = input.toLowerCase() === "topvakantie123";
-  const isHashCorrect = appData.adminHash && (ingevoerdeHash === appData.adminHash);
-
-  if (isStandaardWachtwoord || isHashCorrect) {
-    isAdminIngelogd = true;
-    document.getElementById('loginFormCard').style.display = 'none';
-    document.getElementById('beheerInhoud').style.display = 'grid';
-    renderBeheerKampCheckboxes();
-    renderBeheerLijsten();
-    updateStats();
-  } else {
-    showModal("Toegang Geweigerd", "Onjuist wachtwoord. Gebruik: topvakantie123");
-  }
-};
-
-window.wijzigWachtwoord = async function() {
-  const w1 = document.getElementById('nieuwWachtwoord1').value.trim();
-  const w2 = document.getElementById('nieuwWachtwoord2').value.trim();
-
-  if (!w1 || w1 !== w2) return showModal("Fout", "Wachtwoorden komen niet overeen.");
-
-  const nieuweHash = await hashWachtwoord(w1);
-  appData.adminHash = nieuweHash;
-  await set(ref(db, 'topvakantie/adminHash'), nieuweHash);
-
-  document.getElementById('nieuwWachtwoord1').value = '';
-  document.getElementById('nieuwWachtwoord2').value = '';
-  showModal("Succes", "Nieuw beheerderswachtwoord opgeslagen!");
-};
-
-window.voegMasterActiviteitToe = async function() {
-  const input = document.getElementById('nieuwActNaam');
-  const naam = input.value.trim();
-
-  if (!naam) return showModal("Fout", "Vul een naam in.");
-
-  const nieuw = { id: `mact-${Date.now()}`, naam: naam };
-  appData.masterActiviteiten.push(nieuw);
-  appData.masterActiviteiten = sorteerOpNaam(appData.masterActiviteiten);
-
-  await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
-  input.value = '';
-  renderBeheerLijsten();
-  updateStats();
-  if (document.querySelectorAll('.beheer-kamp-cb:checked').length > 0) {
-    onBeheerKampSelectionChange();
-  }
-  showModal("Succes", `Activiteit "${naam}" toegevoegd aan Master-Database!`);
-};
-
-window.voegKampToe = async function() {
-  const input = document.getElementById('nieuwKampNaam');
-  const naam = input.value.trim();
-  if (!naam) return showModal("Fout", "Vul een kampnaam in.");
-
-  const nieuwKamp = { id: `k-${Date.now()}`, naam: naam };
-  appData.deelkampen.push(nieuwKamp);
-  appData.deelkampen = sorteerOpNaam(appData.deelkampen);
-
-  await set(ref(db, 'topvakantie/deelkampen'), appData.deelkampen);
-  input.value = '';
-  vulDropdowns();
-  renderBeheerKampCheckboxes();
-  renderBeheerLijsten();
-  updateStats();
-  showModal("Succes", `Kamp "${naam}" toegevoegd!`);
-};
-
-window.voegDeelnemerToe = async function() {
-  const input = document.getElementById('nieuwDeelnemerNaam');
-  const kampId = document.getElementById('nieuwDeelnemerKamp').value;
-  const naam = input.value.trim();
-
-  if (!naam || !kampId) return showModal("Fout", "Vul een naam in en kies een kamp.");
-
-  const nieuw = { id: `d-${Date.now()}`, naam: naam, kampId: kampId };
-  appData.deelnemers.push(nieuw);
-  appData.deelnemers = sorteerOpNaam(appData.deelnemers);
-
-  await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
-  input.value = '';
-  
-  renderBeheerLijsten();
-  updateStats();
-  showModal("Succes", `Deelnemer "${naam}" toegevoegd!`);
-};
-
-function renderBeheerLijsten() {
-  const container = document.getElementById('beheerLijstContainer');
-  if (!container) return;
-
-  const filterZoek = document.getElementById('beheerDeelnemerZoekInput')?.value.toLowerCase().trim() || '';
-  let gefilterdeDeelnemers = appData.deelnemers;
-
-  if (filterZoek) {
-    gefilterdeDeelnemers = gefilterdeDeelnemers.filter(d => d.naam && d.naam.toLowerCase().includes(filterZoek));
-  }
-
-  let html = `
-    <h4>Totale Master Activiteiten Database (${appData.masterActiviteiten.length})</h4>
-    <table class="admin-table">
-      <tr><th>Activiteitnaam</th><th>Actie</th></tr>
-      ${appData.masterActiviteiten.map(a => `
-        <tr>
-          <td>${a.naam}</td>
-          <td><button class="btn btn-danger btn-sm" onclick="verwijderMasterAct('${a.id}')">Wissen</button></td>
-        </tr>
-      `).join('')}
-    </table>
-
-    <h4 class="margin-top">Deelkampen (${appData.deelkampen.length})</h4>
-    <table class="admin-table">
-      <tr><th>Kampnaam</th><th>Actie</th></tr>
-      ${appData.deelkampen.map(k => `
-        <tr>
-          <td>${k.naam}</td>
-          <td><button class="btn btn-danger btn-sm" onclick="verwijderKamp('${k.id}')">Wissen</button></td>
-        </tr>
-      `).join('')}
-    </table>
-
-    <div class="flex-between margin-top align-items-center">
-      <h4 style="margin:0;">Deelnemers Beheren & Wissen (${appData.deelnemers.length})</h4>
-      <input type="text" id="beheerDeelnemerZoekInput" class="form-control table-filter-input" placeholder="🔍 Zoek deelnemer in beheer..." value="${filterZoek}" oninput="renderBeheerLijsten()">
-    </div>
-    <table class="admin-table">
-      <tr><th>Naam Deelnemer</th><th>Kamp</th><th>Actie</th></tr>
-      ${gefilterdeDeelnemers.slice(0, 100).map(d => {
-        const kamp = appData.deelkampen.find(k => k.id === d.kampId);
-        return `
-          <tr>
-            <td><strong>${d.naam}</strong></td>
-            <td>${kamp ? kamp.naam : 'Geen kamp'}</td>
-            <td><button class="btn btn-danger btn-sm" onclick="verwijderDeelnemer('${d.id}')">Wissen</button></td>
-          </tr>
-        `;
-      }).join('')}
-    </table>
-    ${gefilterdeDeelnemers.length > 100 ? `<p class="help-text margin-top-sm">Getoond: eerste 100 resultaten. Gebruik de zoekbalk voor meer.</p>` : ''}
-  `;
-  container.innerHTML = html;
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
 }
 
-window.verwijderDeelnemer = async function(id) {
-  const d = appData.deelnemers.find(x => x.id === id);
-  const bevestig = confirm(`Weet je zeker dat je deelnemer "${d ? d.naam : ''}" wilt verwijderen uit de database?`);
-  
-  if (bevestig) {
-    appData.deelnemers = appData.deelnemers.filter(a => a.id !== id);
-    
-    ['voormiddag', 'namiddag1', 'namiddag2', 'avond'].forEach(p => {
-      delete appData.keuzes[`${id}_${p}`];
-    });
-
-    await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
-    await set(ref(db, 'topvakantie/keuzes'), appData.keuzes);
-
-    const huidigKamp = document.getElementById('kampSelect')?.value;
-    if (huidigKamp) renderDeelnemersFormulier(huidigKamp);
-
-    renderBeheerLijsten();
-    updateStats();
-    showModal("Verwijderd", "Deelnemer is verwijderd uit de database.");
-  }
-};
-
-window.verwijderMasterAct = async function(id) {
-  appData.masterActiviteiten = appData.masterActiviteiten.filter(a => a.id !== id);
-  await set(ref(db, 'topvakantie/masterActiviteiten'), appData.masterActiviteiten);
-  renderBeheerLijsten();
-  updateStats();
-};
-
-window.verwijderKamp = async function(id) {
-  appData.deelkampen = appData.deelkampen.filter(k => k.id !== id);
-  await set(ref(db, 'topvakantie/deelkampen'), appData.deelkampen);
-  vulDropdowns();
-  renderBeheerKampCheckboxes();
-  renderBeheerLijsten();
-  updateStats();
-};
-
-// 4. OVERZICHT & EXPORT
-window.updateOverzicht = function() {
-  const filterKamp = document.getElementById('overzichtKampSelect').value;
-  const container = document.getElementById('overzichtContainer');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const periodes = [
-    { id: 'voormiddag', label: 'Voormiddag' },
-    { id: 'namiddag1', label: 'Namiddag 1' },
-    { id: 'namiddag2', label: 'Namiddag 2' },
-    { id: 'avond', label: 'Avond' }
-  ];
-
-  let erIsMinstensEenInschrijving = false;
-
-  periodes.forEach(p => {
-    let periodeHtml = '';
-    let aantalInscriptiesInPeriode = 0;
-
-    appData.masterActiviteiten.forEach(act => {
-      const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
-      const ingeschreven = deelnemersLijst.filter(d => {
-        const isKampMatch = !filterKamp || d.kampId === filterKamp;
-        return isKampMatch && appData.keuzes[`${d.id}_${p.id}`] === act.id;
-      });
-
-      if (ingeschreven.length > 0) {
-        aantalInscriptiesInPeriode += ingeschreven.length;
-        erIsMinstensEenInschrijving = true;
-
-        periodeHtml += `
-          <div class="overzicht-card">
-            <h4>${act.naam}</h4>
-            <p>${ingeschreven.length} deelnemer(s)</p>
-            <div class="deelnemers-tags">
-              ${ingeschreven.map(d => `<span class="tag">${d.naam}</span>`).join('')}
-            </div>
-          </div>
-        `;
-      }
-    });
-
-    if (aantalInscriptiesInPeriode > 0) {
-      const sectie = document.createElement('div');
-      sectie.className = 'tijdsstip-sectie';
-      sectie.innerHTML = `
-        <h3 class="tijdsstip-titel">${p.label}</h3>
-        <div class="overzicht-grid">${periodeHtml}</div>
-      `;
-      container.appendChild(sectie);
-    }
-  });
-
-  if (!erIsMinstensEenInschrijving) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg class="empty-svg" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div><h3>Geen Keuzes Gevonden</h3><p>Er zijn nog geen inschrijvingen opgeslagen voor dit filter.</p></div>';
-  }
-};
-
-window.exportCSV = function() {
-  const filterKamp = document.getElementById('kampSelect').value;
-  
-  const periodes = [
-    { id: 'voormiddag', label: 'Voormiddag' },
-    { id: 'namiddag1', label: 'Namiddag 1' },
-    { id: 'namiddag2', label: 'Namiddag 2' },
-    { id: 'avond', label: 'Avond' }
-  ];
-
-  let excelHtml = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-    <head>
-      <!--[if gte mso 9]>
-      <xml>
-        <x:ExcelWorkbook>
-          <x:ExcelWorksheets>
-            <x:ExcelWorksheet>
-              <x:Name>Keuzeactiviteiten</x:Name>
-              <x:WorksheetOptions>
-                <x:DisplayGridlines/>
-              </x:WorksheetOptions>
-            </x:ExcelWorksheet>
-          </x:ExcelWorksheets>
-        </x:ExcelWorkbook>
-      </xml>
-      <![endif]-->
-      <meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>
-      <style>
-        th { background-color: #70b22a; color: white; font-weight: bold; border: 1px solid #5d9622; padding: 8px; text-align: left; }
-        td { border: 1px solid #dbe4d5; padding: 6px; font-family: Arial, sans-serif; }
-        .period-header { background-color: #004b87; color: white; font-size: 14pt; font-weight: bold; }
-        .act-header { background-color: #f0f7e8; color: #004b87; font-weight: bold; }
-      </style>
-    </head>
-    <body>
-      <table>
-        <tr><td colspan="3" style="font-size: 16pt; font-weight: bold; color: #004b87;">Topvakantie Keuzeactiviteiten Overzicht</td></tr>
-        <tr><td></td></tr>
-  `;
-
-  periodes.forEach(p => {
-    let heeftData = false;
-    let periodBlock = `<tr><td colspan="3" class="period-header">${p.label}</td></tr>`;
-    periodBlock += `<tr><th>Activiteit</th><th>Deelnemer</th><th>Kamp</th></tr>`;
-
-    appData.masterActiviteiten.forEach(act => {
-      const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
-      const ingeschreven = deelnemersLijst.filter(d => {
-        const isKampMatch = !filterKamp || d.kampId === filterKamp;
-        return isKampMatch && appData.keuzes[`${d.id}_${p.id}`] === act.id;
-      });
-
-      if (ingeschreven.length > 0) {
-        heeftData = true;
-        ingeschreven.forEach(d => {
-          const kamp = appData.deelkampen.find(k => k.id === d.kampId);
-          periodBlock += `
-            <tr>
-              <td class="act-header">${act.naam}</td>
-              <td>${d.naam}</td>
-              <td>${kamp ? kamp.naam : ''}</td>
-            </tr>
-          `;
-        });
-      }
-    });
-
-    if (heeftData) {
-      excelHtml += periodBlock + `<tr><td></td></tr>`;
-    }
-  });
-
-  excelHtml += `</table></body></html>`;
-
-  const blob = new Blob([excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `Topvakantie_Keuzes_Geformatteerd.xls`;
-  link.click();
-};
-
-window.onbeforeprint = function() {
-  const printContainer = document.getElementById('printContainer');
-  const filterKamp = document.getElementById('kampSelect').value;
-
-  let html = '';
-
-  const periodes = [
-    { id: 'voormiddag', label: 'Voormiddag' },
-    { id: 'namiddag1', label: 'Namiddag 1' },
-    { id: 'namiddag2', label: 'Namiddag 2' },
-    { id: 'avond', label: 'Avond' }
-  ];
-
-  periodes.forEach(p => {
-    appData.masterActiviteiten.forEach(act => {
-      const deelnemersLijst = sorteerOpNaam([...appData.deelnemers]);
-      const ingeschreven = deelnemersLijst.filter(d => {
-        const isKampMatch = !filterKamp || d.kampId === filterKamp;
-        return isKampMatch && appData.keuzes[`${d.id}_${p.id}`] === act.id;
-      });
-
-      if (ingeschreven.length > 0) {
-        html += `
-          <div class="print-page">
-            <div class="print-header">
-              <span class="print-period-badge">${p.label}</span>
-              <div class="print-act-title">${act.naam}</div>
-              <div class="print-count">Totaal inschrijvingen: ${ingeschreven.length} deelnemer(s)</div>
-            </div>
-
-            <table class="print-table">
-              <thead>
-                <tr>
-                  <th class="print-checkbox-col">Aanw.</th>
-                  <th>#</th>
-                  <th>Naam Deelnemer</th>
-                  <th>Kamp</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${ingeschreven.map((d, index) => {
-                  const kamp = appData.deelkampen.find(k => k.id === d.kampId);
-                  return `
-                    <tr>
-                      <td class="print-checkbox-col"><span class="print-checkbox-box"></span></td>
-                      <td>${index + 1}</td>
-                      <td><strong>${d.naam}</strong></td>
-                      <td>${kamp ? kamp.naam : ''}</td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }
-    });
-  });
-
-  if (!html) {
-    html = `<div class="print-page"><p>Er zijn geen inschrijvingen gevonden om af te drukken.</p></div>`;
-  }
-
-  printContainer.innerHTML = html;
-};
-
-window.openTab = function(tabName) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
-  const tabElem = document.getElementById(`tab-${tabName}`);
-  if (tabElem) tabElem.classList.add('active');
-  
-  const btnElem = document.getElementById(`btn-tab-${tabName}`);
-  if (btnElem) btnElem.classList.add('active');
-};
-
-function showModal(title, msg) {
-  const modalTitle = document.getElementById('modalTitle');
-  const modalMessage = document.getElementById('modalMessage');
-  const customModal = document.getElementById('customModal');
-
-  if (modalTitle) modalTitle.textContent = title;
-  if (modalMessage) modalMessage.textContent = msg;
-  if (customModal) customModal.style.display = 'flex';
+.tab-btn.active {
+  color: var(--secondary);
+  background: white;
+  border-color: white;
+  box-shadow: var(--shadow-md);
 }
 
-window.closeModal = function() {
-  const customModal = document.getElementById('customModal');
-  if (customModal) customModal.style.display = 'none';
-};
+.app-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
 
-laadFirebaseData();
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Kaarten */
+.card {
+  background: var(--card-bg);
+  padding: 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.selector-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.form-label { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; font-size: 0.98rem; color: var(--text); }
+.label-hint { font-size: 0.84rem; color: var(--text-muted); font-weight: 500; }
+
+/* Formuliervelden */
+.form-control {
+  padding: 12px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.98rem;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  background: white;
+  transition: all 0.2s ease;
+  color: var(--text);
+}
+
+.form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3.5px rgba(112, 178, 42, 0.18); }
+.form-group { margin-bottom: 16px; }
+
+/* Progress & Zoekbalk */
+.selectie-header-panel { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+.progress-card { padding: 18px 24px; }
+.progress-info { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+.progress-title { font-size: 1.05rem; font-weight: 800; color: var(--secondary); }
+.progress-sub { display: block; font-size: 0.84rem; color: var(--text-muted); }
+.progress-counter { font-size: 1.05rem; font-weight: 800; color: var(--primary-hover); }
+
+.progress-bar-bg { background: #e2e8f0; height: 12px; border-radius: 6px; overflow: hidden; }
+.progress-bar-fill { background: linear-gradient(90deg, #70b22a 0%, #8bc53f 100%); height: 100%; transition: width 0.4s ease; }
+
+.search-input-wrapper { position: relative; display: flex; align-items: center; }
+.search-icon { position: absolute; left: 16px; width: 20px; height: 20px; fill: #94a3b8; }
+.search-input { padding-left: 46px; padding-right: 40px; font-size: 1.02rem; }
+.search-clear-btn { position: absolute; right: 14px; background: transparent; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; }
+
+/* Actiebalk & Knoppen */
+.actions-bar { display: none; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn {
+  padding: 12px 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.96rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+}
+
+.btn-svg { width: 18px; height: 18px; fill: currentColor; }
+.btn-shadow { box-shadow: 0 4px 12px rgba(112, 178, 42, 0.25); }
+.btn-sm { padding: 7px 14px; font-size: 0.86rem; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+.btn-secondary { background: var(--secondary); color: white; }
+.btn-secondary:hover { background: var(--secondary-hover); transform: translateY(-1px); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { background: var(--danger-hover); }
+.btn-danger-soft { background: var(--danger-light); color: var(--danger); border: 1px solid #fca5a5; }
+.btn-danger-soft:hover { background: #fee2e2; }
+
+/* Deelnemer Kaarten (Tab 1) */
+.deelnemer-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.deelnemer-card:hover { border-color: #cce2b5; box-shadow: var(--shadow-md); }
+.deelnemer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid #f0f4ec; padding-bottom: 10px; }
+.deelnemer-naam { font-size: 1.25rem; font-weight: 800; color: var(--secondary); }
+
+.status-tag { font-size: 0.8rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; }
+.status-tag.complete { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.status-tag.incomplete { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+.periodes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.periode-box { background: #f8faf6; padding: 14px; border-radius: var(--radius-sm); border: 1px solid #e3ebe0; }
+.periode-box.periode-disabled { opacity: 0.65; background: #f1f5f9; }
+.periode-title { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: var(--primary-hover); margin-bottom: 8px; letter-spacing: 0.03em; }
+
+/* TAB 2: OVERZICHT PER ACTIVITEIT */
+.tijdsstip-sectie { background: white; border-radius: var(--radius-md); padding: 24px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+.tijdsstip-titel { font-size: 1.4rem; font-weight: 800; color: var(--secondary); margin-top: 0; margin-bottom: 18px; border-bottom: 3px solid var(--primary); padding-bottom: 8px; }
+.overzicht-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+.overzicht-card { background: #f8faf6; padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.overzicht-card h4 { margin-top: 0; margin-bottom: 8px; color: var(--primary-hover); font-size: 1.15rem; font-weight: 800; }
+.overzicht-card p { margin: 0 0 12px 0; color: var(--text-muted); font-size: 0.9rem; font-weight: 700; }
+
+.deelnemers-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { background: white; color: var(--secondary); padding: 5px 12px; border-radius: 16px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); }
+
+/* TAB 3: BEHEERPANEEL & LEEFTIJD / DUBBELE BLOKKEN INPUTS */
+.admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.full-width { grid-column: 1 / -1 !important; width: 100%; }
+
+.bg-stats { background: #f0f7e8 !important; border-color: #cce2b5 !important; }
+.stats-header h3 { margin-top: 0; margin-bottom: 16px; color: var(--secondary); }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center; }
+.stat-box { background: white; padding: 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.stat-num { display: block; font-size: 2rem; font-weight: 800; color: var(--secondary); }
+.stat-label { font-size: 0.88rem; color: var(--text-muted); font-weight: 600; }
+
+.checkbox-matrix { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+.checkbox-label { background: #f8faf6; padding: 10px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.92rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s ease; }
+.checkbox-label:hover { background: #f0f7e8; border-color: #cce2b5; }
+
+.border-top-divider { border-top: 2px solid #f0f4ec; padding-top: 20px; }
+.periodes-aanbod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; }
+.periode-aanbod-box { background: #f8faf6; padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+
+.beheer-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; background: white; padding: 12px; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; }
+.beheer-item-row { display: flex; align-items: center; gap: 8px; }
+.max-input-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+.max-input-group input[type="number"] { width: 55px !important; padding: 4px 6px; font-size: 0.8rem; }
+.double-block-label { font-size: 0.78rem; font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 4px; margin-top: 4px; cursor: pointer; }
+
+.checkbox-list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
+.admin-grid-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.admin-table th, .admin-table td { padding: 12px; border: 1px solid var(--border); text-align: left; }
+.admin-table th { background: #f0f7e8; color: var(--secondary); font-weight: 700; }
+
+.danger-card-border { border-color: #fca5a5 !important; background: #fff5f5 !important; }
+.color-danger { color: var(--danger); margin-top: 0; }
+
+.login-card { padding: 36px 30px; }
+.login-lock-icon { width: 48px; height: 48px; margin: 0 auto 12px auto; fill: var(--secondary); }
+.lock-svg { width: 100%; height: 100%; }
+.login-subtitle { color: var(--text-muted); font-size: 0.92rem; margin-bottom: 20px; }
+.login-hint { font-size: 0.84rem; color: var(--text-muted); margin-top: 16px; }
+
+.table-filter-input { max-width: 320px; }
+
+/* Layout Helpers */
+.flex-grow { flex-grow: 1; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.align-center { text-align: center; }
+.align-items-center { align-items: center; }
+.align-self-end { align-self: flex-end; }
+.text-left { text-align: left; }
+.width-100 { width: 100%; }
+.margin-bottom { margin-bottom: 20px; }
+.margin-bottom-sm { margin-bottom: 8px; }
+.margin-bottom-none { margin-bottom: 0 !important; }
+.margin-top { margin-top: 16px; }
+.margin-top-sm { margin-top: 8px; }
+.help-text { font-size: 0.92rem; color: var(--text-muted); margin-top: -4px; }
+.max-width-center { max-width: 440px; margin: 40px auto; }
+
+.empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: var(--radius-md); color: var(--text-muted); border: 2px dashed var(--border); }
+.empty-svg { width: 48px; height: 48px; fill: #cbd5e1; margin-bottom: 12px; }
+.empty-state h3 { margin: 0 0 6px 0; color: var(--secondary); font-size: 1.3rem; }
+.empty-state p { margin: 0; font-size: 0.95rem; }
+
+/* PRINT STYLING - ELKE ACTIVITEIT OP EEN EIGEN PAGINA */
+.print-only { display: none; }
+
+@media print {
+  body { background: white; color: black; padding: 0; }
+  .app-header-full, .app-container { display: none !important; }
+  .print-only { display: block !important; padding: 0; }
+
+  .print-page {
+    page-break-after: always;
+    break-after: page;
+    padding: 30px;
+    font-size: 14pt;
+  }
+
+  .print-page:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  .print-header { border-bottom: 3px solid #004b87; padding-bottom: 12px; margin-bottom: 20px; }
+  .print-period-badge { background: #004b87; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12pt; font-weight: bold; display: inline-block; margin-bottom: 8px; }
+  .print-act-title { font-size: 22pt; font-weight: 800; color: #70b22a; margin: 6px 0; }
+  .print-count { font-size: 12pt; color: #555; font-weight: bold; }
+  .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  .print-table th, .print-table td { border: 1px solid #ccc; padding: 10px 14px; text-align: left; }
+  .print-table th { background: #f0f7e8; color: #004b87; font-weight: bold; }
+  .print-checkbox-col { width: 50px; text-align: center !important; }
+  .print-checkbox-box { width: 18px; height: 18px; border: 2px solid #333; display: inline-block; border-radius: 3px; }
+}
+
+/* Modal */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 40, 85, 0.45);
+  backdrop-filter: blur(3px);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 28px;
+  border-radius: var(--radius-md);
+  max-width: 420px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+  border-top: 6px solid var(--primary);
+}
+
+.modal-header h3 { margin: 0 0 10px 0; color: var(--secondary); font-size: 1.3rem; }
+.modal-body p { margin: 0; color: var(--text); font-size: 0.98rem; }
+.modal-actions { text-align: right; margin-top: 24px; }
+
+@media (max-width: 980px) {
+  .header-inner { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .nav-tabs-header { width: 100%; justify-content: flex-start; }
+}
+
+@media (max-width: 768px) {
+  .selector-card { flex-direction: column; align-items: stretch; }
+  .periodes-grid, .periodes-aanbod-grid, .stats-grid, .admin-grid, .admin-grid-inner { grid-template-columns: 1fr; }
+  .nav-tabs-header { flex-wrap: wrap; }
+}
