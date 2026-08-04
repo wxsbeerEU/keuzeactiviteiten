@@ -137,14 +137,12 @@ window.onKampChange = function() {
   const container = document.getElementById('deelnemersContainer');
   const actionsBar = document.getElementById('actionsBar');
   const selectieHeader = document.getElementById('selectieHeader');
-  const badge = document.getElementById('kampBadge');
 
   container.innerHTML = '';
 
   if (!kampId) {
     if (actionsBar) actionsBar.style.display = 'none';
     if (selectieHeader) selectieHeader.style.display = 'none';
-    if (badge) badge.textContent = 'Selecteer een kamp';
     container.innerHTML = `
       <div class="empty-state">
         <svg class="empty-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
@@ -155,8 +153,6 @@ window.onKampChange = function() {
     return;
   }
 
-  const kamp = appData.deelkampen.find(k => k.id === kampId);
-  if (badge) badge.textContent = kamp ? kamp.naam : 'Selecteer een kamp';
   if (actionsBar) actionsBar.style.display = 'flex';
   if (selectieHeader) selectieHeader.style.display = 'flex';
 
@@ -356,7 +352,6 @@ window.opslaanKeuzes = async function() {
     }
   });
 
-  // Schoon alle ongedefinieerde/lege keuzes op
   const schoneKeuzes = {};
   Object.keys(appData.keuzes).forEach(k => {
     if (appData.keuzes[k] && appData.keuzes[k] !== 'unselected' && appData.keuzes[k] !== 'geen') {
@@ -692,7 +687,6 @@ window.voegDeelnemerToe = async function() {
   await set(ref(db, 'topvakantie/deelnemers'), appData.deelnemers);
   input.value = '';
   
-  // Update de schermen veilig zonder het hoofdscherm te laten springen/flipperen
   renderBeheerLijsten();
   updateStats();
   showModal("Succes", `Deelnemer "${naam}" toegevoegd!`);
