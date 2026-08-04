@@ -15,7 +15,8 @@
 <header class="app-header-full">
   <div class="header-inner">
     <div class="header-left">
-      <div class="brand-logo-container">
+      <!-- MOOIE WITTE KADER ROND LOGO -->
+      <div class="brand-logo-card">
         <img src="topvakantie-logo.jpeg" alt="Topvakantie Logo" class="brand-logo">
       </div>
       <div class="brand-text">
@@ -47,7 +48,7 @@
   <!-- TAB 1: KEUZES INVOEREN -->
   <div id="tab-selectie" class="tab-content active">
     
-    <!-- KAMP SELECTOR CARD -->
+    <!-- KAMP SELECTOR CARD (ZONDER DUBBELE BADGE) -->
     <div class="card selector-card">
       <div class="form-group flex-grow margin-bottom-none">
         <label for="kampSelect" class="form-label">
@@ -57,10 +58,6 @@
         <select id="kampSelect" class="form-control" onchange="onKampChange()">
           <option value="">-- Selecteer een Deelkamp --</option>
         </select>
-      </div>
-      <div class="badge-container align-self-end">
-        <span class="badge-label">Actief Kamp:</span>
-        <span class="badge badge-active" id="kampBadge">Selecteer een kamp</span>
       </div>
     </div>
 
