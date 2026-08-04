@@ -33,7 +33,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Header Banner - Volledige breedte */
+/* Header Banner - Volledige breedte (100vw) */
 .app-header-full {
   width: 100%;
   background: linear-gradient(135deg, #70b22a 0%, #8bc53f 100%);
@@ -255,7 +255,7 @@ body {
 .deelnemers-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .tag { background: white; color: var(--secondary); padding: 5px 12px; border-radius: 16px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); }
 
-/* TAB 3: BEHEERPANEEL & LEEFTIJD / DUBBELE BLOKKEN INPUTS */
+/* TAB 3: BEHEERPANEEL & STRAKKE INVOER RONDOM CAPACITEIT & LEEFTIJD */
 .admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
 .full-width { grid-column: 1 / -1 !important; width: 100%; }
 
@@ -274,13 +274,62 @@ body {
 .periodes-aanbod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; }
 .periode-aanbod-box { background: #f8faf6; padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
 
-.beheer-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; background: white; padding: 12px; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; }
+.beheer-item { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; background: white; padding: 12px; border-radius: var(--radius-sm); border: 1px solid #e2e8f0; }
 .beheer-item-row { display: flex; align-items: center; gap: 8px; }
-.max-input-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
-.max-input-group input[type="number"] { width: 55px !important; padding: 4px 6px; font-size: 0.8rem; }
-.double-block-label { font-size: 0.78rem; font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 4px; margin-top: 4px; cursor: pointer; }
 
-.checkbox-list { display: flex; flex-direction: column; max-height: 420px; overflow-y: auto; }
+/* GEOPTIMALISEERDE STRAKKE CONFIGURATIEBALK RONDOM LEEFTIJD & MAX PERS */
+.beheer-item-config {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f8faf6;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #eef3eb;
+  margin-top: 2px;
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.config-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.config-field label {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.config-field input[type="number"] {
+  width: 52px !important;
+  padding: 3px 6px;
+  font-size: 0.82rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.double-block-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.checkbox-list { display: flex; flex-direction: column; max-height: 480px; overflow-y: auto; }
 .admin-grid-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 .admin-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
