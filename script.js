@@ -457,7 +457,6 @@ window.selecteerAlleBeheerKampen = function(selecteer) {
   window.onBeheerKampSelectionChange();
 };
 
-// HERSTELDE EN STRAKKERE OPBOUW VAN HET DAGAANBOD PANEEL
 window.onBeheerKampSelectionChange = function() {
   const geselecteerdeKampIds = Array.from(document.querySelectorAll('.beheer-kamp-cb:checked')).map(cb => cb.value);
   const panel = document.getElementById('beheerAanbodPanel');
